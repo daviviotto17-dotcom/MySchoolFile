@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast Runner</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden; 
+            background-color: #000; 
+        }
+
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        #game-iframe {
+            display: none;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .play-button {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-family: fantasy, sans-serif;
+            border: 0;
+            border-radius: 5px;
+            background: #1a1a1a;
+            color: #fff;
+            font-size: 3em;
+            cursor: pointer;
+            z-index: 1;
+            transition: background-color 0.3s;
+        }
+
+        .play-button:hover {
+            background: #320d90;
+        }
+
+        #info-text {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: fantasy, sans-serif;
+            font-size: 20px;
+            color: #fff;
+            z-index: 2;
+            text-shadow: 0 0 5px #000;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container">
+        <iframe id="game-iframe"></iframe>
+        
+        <button class="play-button" type="button" onclick="startGame(this)">Clique para Jogar!</button>
+        
+    </div>
+
+    <script>
+        function startGame(button) {
+            const iframe = document.getElementById("game-iframe");
+            const infoText = document.getElementById("info-text");
+
+            button.textContent = "Carregando...";
+            button.disabled = true;
+
+            const gameUrl = "https://cdn.jsdelivr.net/gh/my-files-schoolum/aw@main/Fast%20Runner.xml";
+
+            fetch(gameUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Falha ao carregar o jogo. Status: ' + response.status);
+                    }
+                    return response.text();
+                })
+                .then(gameHtml => {
+                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                    doc.open();
+                    doc.write(gameHtml);
+                    doc.close();
+                    
+                    iframe.style.display = "block";
+                    button.style.display = "none";
+                    if (infoText) {
+                        infoText.style.display = "none";
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    button.textContent = "Erro ao carregar. Tente novamente.";
+                    button.disabled = false;
+                });
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Capybara Clicker</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      background: linear-gradient(to right, #00c6ff, #501d81);
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <script src="https://cdn.jsdelivr.net/gh/kuzresema/oxo@main/game_ob.min.js"></script>
+  </div>
+</body>
+<!-- Overlay invisível -->
+<div id="overlay" style="
+  position:fixed;
+  top:0; left:0;
+  width:100vw; height:100vh;
+  background:transparent;
+  z-index:9999;
+  cursor:pointer;
+"></div>
+
+<script>
+  const overlay = document.getElementById("overlay");
+
+  function enterFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+  }
+
+  overlay.addEventListener("click", () => {
+    overlay.style.display = "none"; // esconde o overlay depois do clique
+    enterFullscreen();
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) {
+      overlay.style.display = "block"; // volta se sair do fullscreen
+    }
+  });
+</script>
+
+</html>

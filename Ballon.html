@@ -184,6 +184,11 @@
         let lastColorChange = 0;
         let extraLifeColorIndex = 0;
 
+        // Variáveis para a contagem regressiva e velocidade
+        let isCountingDown = false;
+        const COUNTDOWN_DURATION = 3000; // 3 segundos
+        let countdownStartTime;
+
         const playerImage = new Image();
         playerImage.src = 'https://i.postimg.cc/4KF7RwqW/1000042151-removebg-preview.png';
 
@@ -205,6 +210,12 @@
             { score: 2000, color: '#6C25A0' },
             { score: 6000, color: '#000033' }
         ];
+        
+        // Variáveis para a transição de velocidade
+        let currentObstacleSpeed = 0;
+        let targetObstacleSpeed = 0;
+        const SPEED_TRANSITION_DURATION = 3000; // 3 segundos
+        let speedTransitionStartTime;
 
         function handleResize() {
             screenWidth = window.innerWidth;
@@ -326,7 +337,6 @@
                     ctx.fillStyle = extraLifeColors[extraLifeColorIndex];
                 }
                 
-                // Animação de pulsar para as bolinhas de bônus
                 const pulseRadius = pu.size / 2 + Math.sin(Date.now() / 150) * 5;
                 ctx.beginPath();
                 ctx.arc(pu.x + pu.size / 2, pu.y + pu.size / 2, pulseRadius, 0, Math.PI * 2);
@@ -418,7 +428,35 @@
         }
 
         function update(deltaTime) {
-            if (gameOver || isPaused) return;
+            if (gameOver || isPaused || isCountingDown) return;
+
+            let obstacleSpeed = 2 + score / 750;
+            
+            // Lógica de transição de velocidade após a contagem
+            if (speedTransitionStartTime) {
+                const elapsed = performance.now() - speedTransitionStartTime;
+                const progress = Math.min(elapsed / SPEED_TRANSITION_DURATION, 1);
+                obstacleSpeed = 2 + (targetObstacleSpeed - 2) * progress;
+
+                if (progress >= 1) {
+                    speedTransitionStartTime = null; // Fim da transição
+                    obstacleSpeed = targetObstacleSpeed;
+                }
+            } else {
+                obstacleSpeed = 2 + score / 750;
+            }
+
+            // Aplica a velocidade atualizada a todos os obstáculos
+            for(let i = 0; i < obstacles.length; i++){
+                obstacles[i].speed = obstacleSpeed + (isInvincible ? 1.5 : 0);
+            }
+            for(let i = 0; i < powerups.length; i++){
+                powerups[i].speed = obstacleSpeed;
+            }
+            for(let i = 0; i < clouds.length; i++){
+                clouds[i].speed = 0.5 + Math.random() * 0.5; // Nuvens não dependem da pontuação
+            }
+
 
             if (isInvincible) {
                 invincibilityTimer -= deltaTime;
@@ -468,18 +506,17 @@
                 }
             }
 
-            const obstacleSpeedMultiplier = deltaTime / (1000 / 60);
+            const speedMultiplier = deltaTime / (1000 / 60);
             for (let i = 0; i < obstacles.length; i++) {
-                obstacles[i].y += obstacles[i].speed * obstacleSpeedMultiplier;
+                obstacles[i].y += obstacles[i].speed * speedMultiplier;
             }
 
-            const powerupSpeedMultiplier = deltaTime / (1000 / 60);
             for (let i = 0; i < powerups.length; i++) {
-                powerups[i].y += powerups[i].speed * powerupSpeedMultiplier;
+                powerups[i].y += powerups[i].speed * speedMultiplier;
             }
 
             for (let i = 0; i < clouds.length; i++) {
-                clouds[i].y += clouds[i].speed * obstacleSpeedMultiplier;
+                clouds[i].y += clouds[i].speed * speedMultiplier;
             }
             
             if (Math.random() < 0.002) {
@@ -521,7 +558,7 @@
             if (isMagnetic) {
                 if (powerups.length === 0 && magneticSpawnCount > 0) {
                     const size = 30;
-                    const speed = 2 + score / 750;
+                    const speed = currentObstacleSpeed;
                     const powerupTypes = ['invincibility', 'shield']; 
                     const randomType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
                     powerups.push({
@@ -539,8 +576,7 @@
             const obstacleSpawnRate = score < 100 ? 0.005 : 0.015;
             if (Math.random() < obstacleSpawnRate) {
                 const size = 30 + Math.random() * 40;
-                const baseSpeed = 2 + score / 750;
-                const speed = baseSpeed + (isInvincible ? 1.5 : 0);
+                const speed = currentObstacleSpeed + (isInvincible ? 1.5 : 0);
                 obstacles.push({
                     x: Math.random() * (screenWidth - size),
                     y: -size,
@@ -549,10 +585,12 @@
                 });
             }
 
-            const extraLifeSpawnRate = 0.0001;
+            // Aumenta a chance da vida extra quando o jogador tem 1 vida
+            const extraLifeSpawnRate = (lives === 1) ? 0.0005 : 0.0001; 
+            
             if (Math.random() < extraLifeSpawnRate && powerups.length < 2) {
                 const size = 25;
-                const speed = 2 + score / 700;
+                const speed = currentObstacleSpeed;
                 powerups.push({
                     x: Math.random() * (screenWidth - size),
                     y: -size,
@@ -566,7 +604,7 @@
                 const randomType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
                 
                 const size = 30;
-                const speed = 2 + score / 750;
+                const speed = currentObstacleSpeed;
                 powerups.push({
                     x: Math.random() * (screenWidth - size),
                     y: -size,
@@ -651,6 +689,15 @@
                 }
             }
         }
+        
+        function drawCountdown() {
+            const timeLeft = Math.max(0, Math.ceil((countdownStartTime + COUNTDOWN_DURATION - performance.now()) / 1000));
+            ctx.fillStyle = 'white';
+            ctx.font = '100px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(timeLeft, screenWidth / 2, screenHeight / 2);
+            ctx.textAlign = 'left';
+        }
 
         function drawScore() {
             ctx.fillStyle = 'white';
@@ -670,12 +717,16 @@
             isPaused = true;
             pauseMenu.style.display = 'flex';
             cancelAnimationFrame(animationFrameId);
+            // Salva a velocidade atual dos obstáculos para restaurar depois
+            targetObstacleSpeed = 2 + score / 750;
         }
 
         function resumeGame() {
             isPaused = false;
             pauseMenu.style.display = 'none';
-            lastTime = performance.now();
+            isCountingDown = true;
+            countdownStartTime = performance.now();
+            speedTransitionStartTime = null; // Reinicia o timer de transição
             animationFrameId = requestAnimationFrame(gameLoop);
         }
         
@@ -685,9 +736,16 @@
             pauseButton.style.display = 'block';
 
             lives = 3;
+            score = 0;
+            obstacles = [];
+            powerups = [];
+            clouds = [];
+            breakingAnimations = [];
             isInvincible = true;
             invincibilityTimer = initialInvincibilityDuration;
             isFlashing = false;
+            isMagnetic = false;
+            isShielded = false;
             
             if (playerImage.complete && playerImage.naturalHeight !== 0) {
                 lastTime = performance.now();
@@ -709,18 +767,26 @@
             const deltaTime = timestamp - lastTime;
             lastTime = timestamp;
 
-            if (!gameOver && !isPaused) {
-                drawBackground();
-                drawClouds();
-                
+            drawBackground();
+            drawClouds();
+            drawPlayer();
+            drawObstacles();
+            drawPowerups();
+            drawBreakingAnimations();
+            drawScore();
+            drawLives();
+            drawBonusTimer();
+
+            if (isCountingDown) {
+                drawCountdown();
+                const elapsed = timestamp - countdownStartTime;
+                if (elapsed >= COUNTDOWN_DURATION) {
+                    isCountingDown = false;
+                    speedTransitionStartTime = timestamp;
+                    lastTime = timestamp;
+                }
+            } else if (!gameOver && !isPaused) {
                 update(deltaTime);
-                drawPlayer();
-                drawObstacles();
-                drawPowerups();
-                drawBreakingAnimations();
-                drawScore();
-                drawLives();
-                drawBonusTimer();
             }
             
             animationFrameId = requestAnimationFrame(gameLoop);
@@ -732,7 +798,7 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            if (gameOver || isPaused) return;
+            if (gameOver || isPaused || isCountingDown) return;
 
             if (e.key === 'ArrowLeft' || e.key === 'a') {
                 playerX -= playerSpeed;
@@ -745,20 +811,20 @@
 
             if (e.key === 'p' || e.key === 'P') {
                 if (isPaused) {
-                    resumeGame();
-                } else {
                     pauseGame();
+                } else {
+                    resumeGame();
                 }
             }
         });
 
         canvas.addEventListener('mousedown', (e) => {
-            if (gameOver || isPaused) return;
+            if (gameOver || isPaused || isCountingDown) return;
             lastMouseX = e.clientX;
         });
 
         canvas.addEventListener('mousemove', (e) => {
-            if (gameOver || isPaused || lastMouseX === null) return;
+            if (gameOver || isPaused || isCountingDown || lastMouseX === null) return;
             
             const deltaX = e.clientX - lastMouseX;
             playerX += deltaX;
@@ -777,13 +843,13 @@
         });
 
         canvas.addEventListener('touchstart', (e) => {
-            if (gameOver || isPaused) return;
+            if (gameOver || isPaused || isCountingDown) return;
             const touch = e.touches[0];
             lastMouseX = touch.clientX;
         });
 
         canvas.addEventListener('touchmove', (e) => {
-            if (gameOver || isPaused) return;
+            if (gameOver || isPaused || isCountingDown) return;
             const touch = e.touches[0];
             if (lastMouseX !== null) {
                 const deltaX = touch.clientX - lastMouseX;
@@ -811,17 +877,17 @@
         });
     </script>
     <audio id="bg-music" autoplay loop muted hidden>
-  <source src="https://archive.org/download/call-the-shot/call-the-shot.mp3" type="audio/mpeg">
-</audio>
+      <source src="https://archive.org/download/call-the-shot/call-the-shot.mp3" type="audio/mpeg">
+    </audio>
 
-<script>
-  const audio = document.getElementById("bg-music");
-  document.addEventListener("click", () => {
-    audio.muted = false;   // desmuta
-    audio.play();          // inicia o som
-  }, { once: true });       // só no primeiro clique
-</script>
-<!-- Overlay invisível -->
+    <script>
+      const audio = document.getElementById("bg-music");
+      document.addEventListener("click", () => {
+        audio.muted = false;
+        audio.play();
+      }, { once: true });
+    </script>
+    <!-- Overlay invisível -->
 <div id="overlay" style="
   position:fixed;
   top:0; left:0;
@@ -852,4 +918,6 @@
     }
   });
 </script>
+
+</body>
 </html>

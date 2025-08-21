@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Balão de ar quente</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: sans-serif;
+            color: white;
+            flex-direction: column;
+            text-align: center;
+        }
+        canvas {
+            display: block;
+        }
+        .menu-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 40px;
+            border-radius: 10px;
+            z-index: 100;
+        }
+        .menu-screen button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #initial-menu {
+            display: flex;
+        }
+        #pause-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 50;
+            line-height: 1;
+        }
+        .powerup-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .instructions-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="initial-menu" class="menu-screen">
+        <h1>Jogo do Balão de ar quente</h1>
+        <button id="showInstructionsButton">Jogar</button>
+    </div>
+
+    <div id="instructions-menu" class="menu-screen" style="display:none;">
+        <h1>Instruções</h1>
+        <p style="font-size: 14px;">Para jogar você deve desviar de quadrados vermelhos e pegar os bônus para te ajudar.</p>
+        <span><strong>Bônus:</strong></span>
+        <div class="instructions-item">
+            <div class="powerup-icon" style="background-color: blue;"></div>
+            <span>Invencibilidade: te dá 8 segundos de invencibilidade e velocidade.</span>
+        </div>
+        <div class="instructions-item">
+            <div class="powerup-icon" style="background-color: green;"></div>
+            <span>Escudo: te protege de um único impacto e te dá 2 segundos de invencibilidade.</span>
+        </div>
+        <div class="instructions-item">
+            <div class="powerup-icon" style="background-color: purple;"></div>
+            <span>Ímã: puxa os bônus para você.</span>
+        </div>
+        <button id="startGameButton">Iniciar Jogo</button>
+    </div>
+
+    <div id="pause-menu" class="menu-screen" style="display:none;">
+        <h1>Jogo Pausado</h1>
+        <button id="resumeGameButton">Continuar</button>
+    </div>
+
+    <div id="game-over-screen" class="menu-screen">
+        <h1>Game Over!</h1>
+        <p>Sua pontuação final é: <span id="finalScore">0</span></p>
+        <button id="playAgainButton">Jogar Novamente</button>
+    </div>
+
+    <button id="pause-button" style="display: none;">⏸</button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const initialMenu = document.getElementById('initial-menu');
+        const instructionsMenu = document.getElementById('instructions-menu');
+        const pauseMenu = document.getElementById('pause-menu');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const showInstructionsButton = document.getElementById('showInstructionsButton');
+        const startGameButton = document.getElementById('startGameButton');
+        const resumeGameButton = document.getElementById('resumeGameButton');
+        const pauseButton = document.getElementById('pause-button');
+        const playAgainButton = document.getElementById('playAgainButton');
+
+        let screenWidth = window.innerWidth;
+        let screenHeight = window.innerHeight;
+        canvas.width = screenWidth;
+        canvas.height = screenHeight;
+        
+        let playerSize = 60;
+        const playerHitboxReduction = 0.2;
+        let playerHitboxWidth = playerSize * (1 - playerHitboxReduction);
+        let playerHitboxHeight = playerSize * (1 - playerHitboxReduction);
+        let playerX = screenWidth / 2 - playerSize / 2;
+        let playerY = screenHeight - playerSize - 20;
+        let playerSpeed = 8;
+        
+        let obstacles = [];
+        let powerups = [];
+        let score = 0;
+        let gameOver = false;
+        let isPaused = false;
+        let touchX = null;
+        let lastTime = 0;
+        let animationFrameId = null;
+
+        let isInvincible = false;
+        let isShielded = false;
+        let isMagnetic = false;
+        let invincibilityTimer = 0;
+        let shieldTimer = 0;
+        let magneticTimer = 0;
+        let magneticSpawnCount = 0;
+
+        const invincibilityDuration = 8000;
+        const shieldDuration = 5000;
+        const magneticDuration = 5000;
+        const initialInvincibilityDuration = 3000;
+        const flashingStart = 3000;
+        const invincibilityAfterShieldDuration = 2000;
+        let isFlashing = false;
+
+        const playerImage = new Image();
+        playerImage.src = 'https://i.ibb.co/cKtykXHc/1000042068-removebg-preview.png';
+
+        function handleResize() {
+            screenWidth = window.innerWidth;
+            screenHeight = window.innerHeight;
+            canvas.width = screenWidth;
+            canvas.height = screenHeight;
+            playerX = screenWidth / 2 - playerSize / 2;
+            playerY = screenHeight - playerSize - 20;
+        }
+
+        function drawPlayer() {
+            if (isFlashing) {
+                const alpha = (Math.floor(Date.now() / 150) % 2) === 0 ? 1 : 0.1;
+                ctx.globalAlpha = alpha;
+            }
+            ctx.drawImage(playerImage, playerX, playerY, playerSize, playerSize);
+            ctx.globalAlpha = 1;
+
+            if (isShielded) {
+                ctx.beginPath();
+                ctx.arc(playerX + playerSize / 2, playerY + playerSize / 2, playerSize * 0.7, 0, Math.PI * 2);
+                ctx.strokeStyle = 'cyan';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+        }
+
+        function drawPlayerFallback() {
+            ctx.fillStyle = 'yellow';
+            ctx.fillRect(playerX, playerY, playerSize, playerSize);
+        }
+
+        function drawObstacles() {
+            ctx.fillStyle = 'red';
+            for (let i = 0; i < obstacles.length; i++) {
+                ctx.fillRect(obstacles[i].x, obstacles[i].y, obstacles[i].size, obstacles[i].size);
+            }
+        }
+
+        function drawPowerups() {
+            for (let i = 0; i < powerups.length; i++) {
+                const pu = powerups[i];
+                if (pu.type === 'invincibility') {
+                    ctx.fillStyle = 'blue';
+                } else if (pu.type === 'shield') {
+                    ctx.fillStyle = 'green';
+                } else if (pu.type === 'magnetic') {
+                    ctx.fillStyle = 'purple';
+                }
+                
+                ctx.beginPath();
+                ctx.arc(pu.x + pu.size / 2, pu.y + pu.size / 2, pu.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawBonusTimer() {
+            if (isInvincible) {
+                const timeLeft = Math.max(0, Math.ceil(invincibilityTimer / 1000));
+                ctx.fillStyle = 'blue';
+                ctx.beginPath();
+                ctx.arc(40, 70, 20, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.fillText(timeLeft, 30, 77);
+            }
+            if (isShielded) {
+                const timeLeft = Math.max(0, Math.ceil(shieldTimer / 1000));
+                ctx.fillStyle = 'green';
+                ctx.beginPath();
+                ctx.arc(100, 70, 20, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.fillText(timeLeft, 90, 77);
+            }
+            if (isMagnetic) {
+                const timeLeft = Math.max(0, Math.ceil(magneticTimer / 1000));
+                ctx.fillStyle = 'purple';
+                ctx.beginPath();
+                ctx.arc(160, 70, 20, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.fillText(timeLeft, 150, 77);
+            }
+        }
+
+        function update(deltaTime) {
+            if (gameOver || isPaused) return;
+
+            if (isInvincible) {
+                invincibilityTimer -= deltaTime;
+                if (invincibilityTimer <= flashingStart && !isFlashing) {
+                    isFlashing = true;
+                }
+                if (invincibilityTimer <= 0) {
+                    isInvincible = false;
+                    isFlashing = false;
+                    playerSpeed = 8;
+                }
+            }
+            
+            if (isShielded && !isInvincible) {
+                shieldTimer -= deltaTime;
+                if (shieldTimer <= 0) {
+                    isShielded = false;
+                }
+            }
+
+            if (isMagnetic) {
+                magneticTimer -= deltaTime;
+                if (magneticTimer <= 0) {
+                    isMagnetic = false;
+                    magneticSpawnCount = 0;
+                }
+            }
+
+            const obstacleSpeedMultiplier = deltaTime / (1000 / 60);
+            for (let i = 0; i < obstacles.length; i++) {
+                obstacles[i].y += obstacles[i].speed * obstacleSpeedMultiplier;
+            }
+
+            const powerupSpeedMultiplier = deltaTime / (1000 / 60);
+            for (let i = 0; i < powerups.length; i++) {
+                powerups[i].y += powerups[i].speed * powerupSpeedMultiplier;
+            }
+
+            if (isMagnetic) {
+                const magneticStrength = 0.05;
+                for (let i = powerups.length - 1; i >= 0; i--) {
+                    const item = powerups[i];
+                    if (item.y > screenHeight) {
+                        item.y = -item.size;
+                    }
+
+                    const dx = playerX - item.x;
+                    const dy = playerY - item.y;
+                    item.x += dx * magneticStrength;
+                    item.y += dy * magneticStrength;
+                }
+            } else {
+                powerups = powerups.filter(item => item.y < screenHeight);
+            }
+            
+            obstacles = obstacles.filter(item => item.y < screenHeight);
+
+            if (isMagnetic) {
+                if (powerups.length === 0 && magneticSpawnCount > 0) {
+                    const size = 30;
+                    const speed = 2 + score / 750;
+                    const powerupTypes = ['invincibility', 'shield']; 
+                    const randomType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+                    powerups.push({
+                        x: Math.random() * (screenWidth - size),
+                        y: -size,
+                        size: size,
+                        speed: speed,
+                        type: randomType,
+                        generatedByMagnet: true
+                    });
+                    magneticSpawnCount--;
+                }
+            }
+
+            const obstacleSpawnRate = score < 100 ? 0.005 : 0.015;
+            if (Math.random() < obstacleSpawnRate) {
+                const size = 30 + Math.random() * 40;
+                const baseSpeed = 2 + score / 750;
+                const speed = baseSpeed + (isInvincible ? 1.5 : 0);
+                obstacles.push({
+                    x: Math.random() * (screenWidth - size),
+                    y: -size,
+                    size: size,
+                    speed: speed
+                });
+            }
+
+            if (Math.random() < 0.001 && powerups.length < 2) {
+                const powerupTypes = ['invincibility', 'shield', 'magnetic'];
+                const randomType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+                
+                const size = 30;
+                const speed = 2 + score / 750;
+                powerups.push({
+                    x: Math.random() * (screenWidth - size),
+                    y: -size,
+                    size: size,
+                    speed: speed,
+                    type: randomType,
+                    generatedByMagnet: false
+                });
+            }
+
+            score++;
+
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const pu = powerups[i];
+                if (
+                    playerX < pu.x + pu.size &&
+                    playerX + playerSize > pu.x &&
+                    playerY < pu.y + pu.size &&
+                    playerY + playerSize > pu.y
+                ) {
+                    if (pu.type === 'invincibility') {
+                        isInvincible = true;
+                        isFlashing = false;
+                        invincibilityTimer = invincibilityDuration;
+                        playerSpeed = 12;
+                    } else if (pu.type === 'shield') {
+                        isShielded = true;
+                        shieldTimer = shieldDuration;
+                    } else if (pu.type === 'magnetic' && !pu.generatedByMagnet) {
+                        isMagnetic = true;
+                        magneticTimer = magneticDuration;
+                        magneticSpawnCount = 2;
+                    }
+                    powerups.splice(i, 1);
+                }
+            }
+
+            if (!isInvincible) {
+                for (let i = 0; i < obstacles.length; i++) {
+                    const obs = obstacles[i];
+                    const playerHitboxOffsetX = (playerSize - playerHitboxWidth) / 2;
+                    const playerHitboxOffsetY = (playerSize - playerHitboxHeight) / 2;
+                    
+                    if (
+                        playerX + playerHitboxOffsetX < obs.x + obs.size &&
+                        playerX + playerHitboxOffsetX + playerHitboxWidth > obs.x &&
+                        playerY + playerHitboxOffsetY < obs.y + obs.size &&
+                        playerY + playerHitboxOffsetY + playerHitboxHeight > obs.y
+                    ) {
+                        if (isShielded) {
+                            obstacles.splice(i, 1);
+                            isShielded = false;
+                            isInvincible = true;
+                            invincibilityTimer = invincibilityAfterShieldDuration;
+                            isFlashing = false;
+                            break;
+                        } else {
+                            endGame();
+                        }
+                    }
+                }
+            }
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText('Pontuação: ' + Math.floor(score / 10), 10, 30);
+        }
+
+        function endGame() {
+            gameOver = true;
+            pauseButton.style.display = 'none';
+            finalScoreDisplay.textContent = Math.floor(score / 10);
+            gameOverScreen.style.display = 'flex';
+            cancelAnimationFrame(animationFrameId);
+        }
+
+        function pauseGame() {
+            isPaused = true;
+            pauseMenu.style.display = 'flex';
+            cancelAnimationFrame(animationFrameId);
+        }
+
+        function resumeGame() {
+            isPaused = false;
+            pauseMenu.style.display = 'none';
+            lastTime = performance.now();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+        
+        function startGame() {
+            initialMenu.style.display = 'none';
+            instructionsMenu.style.display = 'none';
+            pauseButton.style.display = 'block';
+
+            isInvincible = true;
+            invincibilityTimer = initialInvincibilityDuration;
+            isFlashing = false;
+            
+            if (playerImage.complete && playerImage.naturalHeight !== 0) {
+                lastTime = performance.now();
+                animationFrameId = requestAnimationFrame(gameLoop);
+            } else {
+                playerImage.onload = () => {
+                    lastTime = performance.now();
+                    animationFrameId = requestAnimationFrame(gameLoop);
+                };
+                playerImage.onerror = () => {
+                    drawPlayer = drawPlayerFallback;
+                    lastTime = performance.now();
+                    animationFrameId = requestAnimationFrame(gameLoop);
+                };
+            }
+        }
+
+        function gameLoop(timestamp) {
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            if (!gameOver && !isPaused) {
+                ctx.clearRect(0, 0, screenWidth, screenHeight);
+                update(deltaTime);
+                drawPlayer();
+                drawObstacles();
+                drawPowerups();
+                drawScore();
+                drawBonusTimer();
+            }
+            
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function showInstructions() {
+            initialMenu.style.display = 'none';
+            instructionsMenu.style.display = 'flex';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' && playerX > 0) {
+                playerX -= playerSpeed;
+            }
+            if (e.key === 'ArrowRight' && playerX < screenWidth - playerSize) {
+                playerX += playerSpeed;
+            }
+            if (e.key === 'p' || e.key === 'P') {
+                if (!gameOver) {
+                    if (isPaused) {
+                        resumeGame();
+                    } else {
+                        pauseGame();
+                    }
+                }
+            }
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameOver || isPaused) return;
+            const touch = e.touches[0];
+            touchX = touch.clientX;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameOver || isPaused) return;
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - touchX;
+            playerX += deltaX * 1.5;
+            touchX = touch.clientX;
+
+            if (playerX < 0) playerX = 0;
+            if (playerX > screenWidth - playerSize) playerX = screenWidth - playerSize;
+        });
+        
+        window.addEventListener('resize', handleResize);
+
+        showInstructionsButton.addEventListener('click', showInstructions);
+        startGameButton.addEventListener('click', startGame);
+        resumeGameButton.addEventListener('click', resumeGame);
+        pauseButton.addEventListener('click', pauseGame);
+        
+        // Novo comportamento: recarregar a página para reiniciar o jogo
+        playAgainButton.addEventListener('click', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+<!-- Overlay invisível -->
+<div id="overlay" style="
+  position:fixed;
+  top:0; left:0;
+  width:100vw; height:100vh;
+  background:transparent;
+  z-index:9999;
+  cursor:pointer;
+"></div>
+
+<script>
+  const overlay = document.getElementById("overlay");
+
+  function enterFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+  }
+
+  overlay.addEventListener("click", () => {
+    overlay.style.display = "none"; // esconde o overlay depois do clique
+    enterFullscreen();
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) {
+      overlay.style.display = "block"; // volta se sair do fullscreen
+    }
+  });
+</script>
+
+</html>

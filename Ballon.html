@@ -65,6 +65,20 @@
             align-items: center;
             margin-bottom: 15px;
         }
+        /* Animação para a bolinha de vida extra nas instruções */
+        .extra-life-icon-animated {
+            animation: color-change 1s infinite;
+        }
+        @keyframes color-change {
+            0% { background-color: #FF0000; }
+            14% { background-color: #FFA500; }
+            28% { background-color: #FFFF00; }
+            42% { background-color: #008000; }
+            57% { background-color: #0000FF; }
+            71% { background-color: #4B0082; }
+            85% { background-color: #EE82EE; }
+            100% { background-color: #FF0000; }
+        }
     </style>
 </head>
 <body>
@@ -81,7 +95,7 @@
         <span><strong>Bônus:</strong></span>
         <div class="instructions-item">
             <div class="powerup-icon" style="background-color: blue;"></div>
-            <span>Invencibilidade: te dá 8 segundos de invencibilidade e velocidade.</span>
+            <span>Invencibilidade: te dá 5 segundos de invencibilidade e velocidade.</span>
         </div>
         <div class="instructions-item">
             <div class="powerup-icon" style="background-color: green;"></div>
@@ -90,6 +104,10 @@
         <div class="instructions-item">
             <div class="powerup-icon" style="background-color: purple;"></div>
             <span>Ímã: puxa os bônus para você.</span>
+        </div>
+        <div class="instructions-item">
+            <div class="powerup-icon extra-life-icon-animated"></div>
+            <span>Vida Extra: te dá uma vida a mais. É um bônus muito raro.</span>
         </div>
         <button id="startGameButton">Iniciar Jogo</button>
     </div>
@@ -126,21 +144,22 @@
         let screenHeight = window.innerHeight;
         canvas.width = screenWidth;
         canvas.height = screenHeight;
-        
-        let playerSize = 60;
-        const playerHitboxReduction = 0.2;
-        let playerHitboxWidth = playerSize * (1 - playerHitboxReduction);
-        let playerHitboxHeight = playerSize * (1 - playerHitboxReduction);
-        let playerX = screenWidth / 2 - playerSize / 2;
-        let playerY = screenHeight - playerSize - 20;
+
+        const playerWidth = 80;
+        const playerHeight = 110;
+        let playerX = screenWidth / 2 - playerWidth / 2;
+        let playerY = screenHeight - playerHeight - 20;
         let playerSpeed = 8;
         
         let obstacles = [];
         let powerups = [];
+        let clouds = [];
+        let breakingAnimations = [];
         let score = 0;
+        let lives = 3;
         let gameOver = false;
         let isPaused = false;
-        let touchX = null;
+        let lastMouseX = null;
         let lastTime = 0;
         let animationFrameId = null;
 
@@ -152,37 +171,130 @@
         let magneticTimer = 0;
         let magneticSpawnCount = 0;
 
-        const invincibilityDuration = 8000;
+        const invincibilityDuration = 5000;
         const shieldDuration = 5000;
         const magneticDuration = 5000;
         const initialInvincibilityDuration = 3000;
         const flashingStart = 3000;
         const invincibilityAfterShieldDuration = 2000;
         let isFlashing = false;
+        
+        const extraLifeColors = ['#FF0000', '#FFA500', '#FFFF00', '#008000', '#0000FF', '#4B0082', '#EE82EE'];
+        const extraLifeColorChangeInterval = 100;
+        let lastColorChange = 0;
+        let extraLifeColorIndex = 0;
 
         const playerImage = new Image();
-        playerImage.src = 'https://i.ibb.co/cKtykXHc/1000042068-removebg-preview.png';
+        playerImage.src = 'https://i.postimg.cc/4KF7RwqW/1000042151-removebg-preview.png';
+
+        const cloudImageSources = [
+            'https://i.ibb.co/N2fG6Hyc/1000042129-removebg-preview-1.png',
+            'https://i.ibb.co/20RwG992/1000042129-removebg-preview-2.png',
+            'https://i.ibb.co/JjgSZN8r/1000042129-removebg-preview-3.png',
+            'https://i.ibb.co/PzfbrNtL/1000042129-removebg-preview-4.png',
+            'https://i.ibb.co/4n2mJB3g/1000042129-removebg-preview.png'
+        ];
+        const cloudImages = cloudImageSources.map(src => {
+            const img = new Image();
+            img.src = src;
+            return img;
+        });
+
+        const gradientColors = [
+            { score: 0, color: '#68A9FF' },
+            { score: 2000, color: '#6C25A0' },
+            { score: 6000, color: '#000033' }
+        ];
 
         function handleResize() {
             screenWidth = window.innerWidth;
             screenHeight = window.innerHeight;
             canvas.width = screenWidth;
             canvas.height = screenHeight;
-            playerX = screenWidth / 2 - playerSize / 2;
-            playerY = screenHeight - playerSize - 20;
+            playerX = screenWidth / 2 - playerWidth / 2;
+            playerY = screenHeight - playerHeight - 20;
+        }
+
+        function hexToRgb(hex) {
+            const r = parseInt(hex.substring(1, 3), 16);
+            const g = parseInt(hex.substring(3, 5), 16);
+            const b = parseInt(hex.substring(5, 7), 16);
+            return [r, g, b];
+        }
+
+        function interpolateColor(color1, color2, factor) {
+            const c1 = hexToRgb(color1);
+            const c2 = hexToRgb(color2);
+            const r = Math.round(c1[0] + factor * (c2[0] - c1[0]));
+            const g = Math.round(c1[1] + factor * (c2[1] - c1[1]));
+            const b = Math.round(c1[2] + factor * (c2[2] - c1[2]));
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function drawBackground() {
+            const gradient = ctx.createLinearGradient(0, screenHeight, 0, 0);
+
+            let topColor = gradientColors[0].color;
+            let bottomColor = gradientColors[0].color;
+            
+            for (let i = 0; i < gradientColors.length - 1; i++) {
+                if (score >= gradientColors[i].score && score < gradientColors[i + 1].score) {
+                    const startScore = gradientColors[i].score;
+                    const endScore = gradientColors[i + 1].score;
+                    const factor = (score - startScore) / (endScore - startScore);
+                    
+                    bottomColor = interpolateColor(gradientColors[i].color, gradientColors[i + 1].color, factor);
+                    topColor = interpolateColor(gradientColors[i+1].color, gradientColors[Math.min(i + 2, gradientColors.length - 1)].color, factor);
+                    
+                    break;
+                }
+            }
+
+            if (score >= gradientColors[gradientColors.length - 1].score) {
+                bottomColor = gradientColors[gradientColors.length - 1].color;
+                topColor = gradientColors[gradientColors.length - 1].color;
+            }
+
+            gradient.addColorStop(0, bottomColor);
+            gradient.addColorStop(1, topColor);
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, screenWidth, screenHeight);
+        }
+        
+        function drawClouds() {
+            for (let i = 0; i < clouds.length; i++) {
+                ctx.globalAlpha = clouds[i].opacity;
+                ctx.drawImage(clouds[i].image, clouds[i].x, clouds[i].y, clouds[i].size, clouds[i].size);
+            }
+            ctx.globalAlpha = 1;
         }
 
         function drawPlayer() {
+            ctx.save();
+            const playerCenterX = playerX + playerWidth / 2;
+            const playerCenterY = playerY + playerHeight / 2;
+
+            if (isInvincible) {
+                const pulse = Math.abs(Math.sin(Date.now() / 300));
+                ctx.beginPath();
+                ctx.arc(playerCenterX, playerCenterY, playerWidth * (0.6 + pulse * 0.1), 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 191, 255, ${pulse * 0.5 + 0.2})`;
+                ctx.fill();
+            }
+
             if (isFlashing) {
                 const alpha = (Math.floor(Date.now() / 150) % 2) === 0 ? 1 : 0.1;
                 ctx.globalAlpha = alpha;
             }
-            ctx.drawImage(playerImage, playerX, playerY, playerSize, playerSize);
-            ctx.globalAlpha = 1;
+            
+            ctx.drawImage(playerImage, playerX, playerY, playerWidth, playerHeight);
+
+            ctx.restore();
 
             if (isShielded) {
                 ctx.beginPath();
-                ctx.arc(playerX + playerSize / 2, playerY + playerSize / 2, playerSize * 0.7, 0, Math.PI * 2);
+                ctx.arc(playerCenterX, playerCenterY, playerWidth * 0.7, 0, Math.PI * 2);
                 ctx.strokeStyle = 'cyan';
                 ctx.lineWidth = 3;
                 ctx.stroke();
@@ -191,7 +303,7 @@
 
         function drawPlayerFallback() {
             ctx.fillStyle = 'yellow';
-            ctx.fillRect(playerX, playerY, playerSize, playerSize);
+            ctx.fillRect(playerX, playerY, playerWidth, playerHeight);
         }
 
         function drawObstacles() {
@@ -210,12 +322,31 @@
                     ctx.fillStyle = 'green';
                 } else if (pu.type === 'magnetic') {
                     ctx.fillStyle = 'purple';
+                } else if (pu.type === 'extraLife') {
+                    ctx.fillStyle = extraLifeColors[extraLifeColorIndex];
                 }
                 
+                // Animação de pulsar para as bolinhas de bônus
+                const pulseRadius = pu.size / 2 + Math.sin(Date.now() / 150) * 5;
                 ctx.beginPath();
-                ctx.arc(pu.x + pu.size / 2, pu.y + pu.size / 2, pu.size / 2, 0, Math.PI * 2);
+                ctx.arc(pu.x + pu.size / 2, pu.y + pu.size / 2, pulseRadius, 0, Math.PI * 2);
                 ctx.fill();
             }
+        }
+        
+        function drawBreakingAnimations() {
+            for (let i = 0; i < breakingAnimations.length; i++) {
+                const anim = breakingAnimations[i];
+                const opacity = anim.lifetime / 500;
+                ctx.fillStyle = anim.color;
+                ctx.globalAlpha = opacity;
+                
+                for (let p = 0; p < anim.particles.length; p++) {
+                    const particle = anim.particles[p];
+                    ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+                }
+            }
+            ctx.globalAlpha = 1;
         }
 
         function drawBonusTimer() {
@@ -223,32 +354,67 @@
                 const timeLeft = Math.max(0, Math.ceil(invincibilityTimer / 1000));
                 ctx.fillStyle = 'blue';
                 ctx.beginPath();
-                ctx.arc(40, 70, 20, 0, Math.PI * 2);
+                ctx.arc(40, 130, 20, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = 'white';
                 ctx.font = '20px Arial';
-                ctx.fillText(timeLeft, 30, 77);
+                ctx.fillText(timeLeft, 30, 137);
             }
             if (isShielded) {
                 const timeLeft = Math.max(0, Math.ceil(shieldTimer / 1000));
                 ctx.fillStyle = 'green';
                 ctx.beginPath();
-                ctx.arc(100, 70, 20, 0, Math.PI * 2);
+                ctx.arc(100, 130, 20, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = 'white';
                 ctx.font = '20px Arial';
-                ctx.fillText(timeLeft, 90, 77);
+                ctx.fillText(timeLeft, 90, 137);
             }
             if (isMagnetic) {
                 const timeLeft = Math.max(0, Math.ceil(magneticTimer / 1000));
                 ctx.fillStyle = 'purple';
                 ctx.beginPath();
-                ctx.arc(160, 70, 20, 0, Math.PI * 2);
+                ctx.arc(160, 130, 20, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.fillStyle = 'white';
                 ctx.font = '20px Arial';
-                ctx.fillText(timeLeft, 150, 77);
+                ctx.fillText(timeLeft, 150, 137);
             }
+        }
+        
+        function drawLives() {
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText('Vidas: ' + lives, 10, 60);
+        }
+        
+        function getPlayerHitboxPath(x, y, width, height) {
+            const topY = y + height * 0.1;
+            const bottomY = y + height * 0.9;
+            const leftX = x + width * 0.1;
+            const rightX = x + width * 0.9;
+            const centerX = x + width / 2;
+            const bottomTipY = y + height;
+
+            const path = new Path2D();
+            path.moveTo(centerX, topY);
+            path.bezierCurveTo(rightX, y, x + width, y + height * 0.2, x + width, bottomY);
+            path.lineTo(x + width * 0.6, bottomTipY);
+            path.lineTo(x + width * 0.4, bottomTipY);
+            path.bezierCurveTo(x, y + height * 0.2, leftX, y, centerX, topY);
+            path.closePath();
+            return path;
+        }
+
+        function isColliding(obstacle) {
+            const playerPath = getPlayerHitboxPath(playerX, playerY, playerWidth, playerHeight);
+            
+            return (
+                ctx.isPointInPath(playerPath, obstacle.x, obstacle.y) ||
+                ctx.isPointInPath(playerPath, obstacle.x + obstacle.size, obstacle.y) ||
+                ctx.isPointInPath(playerPath, obstacle.x, obstacle.y + obstacle.size) ||
+                ctx.isPointInPath(playerPath, obstacle.x + obstacle.size, obstacle.y + obstacle.size)
+            );
         }
 
         function update(deltaTime) {
@@ -280,6 +446,27 @@
                     magneticSpawnCount = 0;
                 }
             }
+            
+            if (performance.now() - lastColorChange > extraLifeColorChangeInterval) {
+                extraLifeColorIndex = (extraLifeColorIndex + 1) % extraLifeColors.length;
+                lastColorChange = performance.now();
+            }
+            
+            for (let i = breakingAnimations.length - 1; i >= 0; i--) {
+                const anim = breakingAnimations[i];
+                anim.lifetime -= deltaTime;
+                
+                for (let p = 0; p < anim.particles.length; p++) {
+                    const particle = anim.particles[p];
+                    particle.x += particle.dx * (deltaTime / 16);
+                    particle.y += particle.dy * (deltaTime / 16);
+                    particle.size -= 0.1;
+                }
+
+                if (anim.lifetime <= 0) {
+                    breakingAnimations.splice(i, 1);
+                }
+            }
 
             const obstacleSpeedMultiplier = deltaTime / (1000 / 60);
             for (let i = 0; i < obstacles.length; i++) {
@@ -290,6 +477,27 @@
             for (let i = 0; i < powerups.length; i++) {
                 powerups[i].y += powerups[i].speed * powerupSpeedMultiplier;
             }
+
+            for (let i = 0; i < clouds.length; i++) {
+                clouds[i].y += clouds[i].speed * obstacleSpeedMultiplier;
+            }
+            
+            if (Math.random() < 0.002) {
+                const size = 60 + Math.random() * 40;
+                const opacity = 0.5 + Math.random() * 0.5;
+                const speed = 0.5 + Math.random() * 0.5;
+                const randomCloudImage = cloudImages[Math.floor(Math.random() * cloudImages.length)];
+                clouds.push({
+                    x: Math.random() * (screenWidth - size),
+                    y: -size,
+                    size: size,
+                    opacity: opacity,
+                    speed: speed,
+                    image: randomCloudImage
+                });
+            }
+
+            clouds = clouds.filter(item => item.y < screenHeight);
 
             if (isMagnetic) {
                 const magneticStrength = 0.05;
@@ -341,7 +549,19 @@
                 });
             }
 
-            if (Math.random() < 0.001 && powerups.length < 2) {
+            const extraLifeSpawnRate = 0.0001;
+            if (Math.random() < extraLifeSpawnRate && powerups.length < 2) {
+                const size = 25;
+                const speed = 2 + score / 700;
+                powerups.push({
+                    x: Math.random() * (screenWidth - size),
+                    y: -size,
+                    size: size,
+                    speed: speed,
+                    type: 'extraLife',
+                    generatedByMagnet: false
+                });
+            } else if (Math.random() < 0.001 && powerups.length < 2) {
                 const powerupTypes = ['invincibility', 'shield', 'magnetic'];
                 const randomType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
                 
@@ -363,9 +583,9 @@
                 const pu = powerups[i];
                 if (
                     playerX < pu.x + pu.size &&
-                    playerX + playerSize > pu.x &&
+                    playerX + playerWidth > pu.x &&
                     playerY < pu.y + pu.size &&
-                    playerY + playerSize > pu.y
+                    playerY + playerHeight > pu.y
                 ) {
                     if (pu.type === 'invincibility') {
                         isInvincible = true;
@@ -379,6 +599,8 @@
                         isMagnetic = true;
                         magneticTimer = magneticDuration;
                         magneticSpawnCount = 2;
+                    } else if (pu.type === 'extraLife') {
+                        lives++;
                     }
                     powerups.splice(i, 1);
                 }
@@ -387,25 +609,44 @@
             if (!isInvincible) {
                 for (let i = 0; i < obstacles.length; i++) {
                     const obs = obstacles[i];
-                    const playerHitboxOffsetX = (playerSize - playerHitboxWidth) / 2;
-                    const playerHitboxOffsetY = (playerSize - playerHitboxHeight) / 2;
                     
-                    if (
-                        playerX + playerHitboxOffsetX < obs.x + obs.size &&
-                        playerX + playerHitboxOffsetX + playerHitboxWidth > obs.x &&
-                        playerY + playerHitboxOffsetY < obs.y + obs.size &&
-                        playerY + playerHitboxOffsetY + playerHitboxHeight > obs.y
-                    ) {
+                    if (isColliding(obs)) {
+                        let animColor = 'red';
                         if (isShielded) {
-                            obstacles.splice(i, 1);
+                            animColor = 'cyan';
                             isShielded = false;
                             isInvincible = true;
                             invincibilityTimer = invincibilityAfterShieldDuration;
                             isFlashing = false;
-                            break;
                         } else {
-                            endGame();
+                            lives--;
+                            isInvincible = true;
+                            invincibilityTimer = 1000;
+                            isFlashing = true;
+                            if (lives <= 0) {
+                                endGame();
+                            }
                         }
+                        
+                        const particles = [];
+                        for(let j = 0; j < 10; j++) {
+                            const angle = Math.random() * Math.PI * 2;
+                            particles.push({
+                                x: obs.x + obs.size / 2,
+                                y: obs.y + obs.size / 2,
+                                size: 5 + Math.random() * 5,
+                                dx: Math.cos(angle) * (2 + Math.random() * 3),
+                                dy: Math.sin(angle) * (2 + Math.random() * 3),
+                            });
+                        }
+                        breakingAnimations.push({
+                            particles: particles,
+                            color: animColor,
+                            lifetime: 500
+                        });
+
+                        obstacles.splice(i, 1);
+                        break;
                     }
                 }
             }
@@ -443,6 +684,7 @@
             instructionsMenu.style.display = 'none';
             pauseButton.style.display = 'block';
 
+            lives = 3;
             isInvincible = true;
             invincibilityTimer = initialInvincibilityDuration;
             isFlashing = false;
@@ -468,12 +710,16 @@
             lastTime = timestamp;
 
             if (!gameOver && !isPaused) {
-                ctx.clearRect(0, 0, screenWidth, screenHeight);
+                drawBackground();
+                drawClouds();
+                
                 update(deltaTime);
                 drawPlayer();
                 drawObstacles();
                 drawPowerups();
+                drawBreakingAnimations();
                 drawScore();
+                drawLives();
                 drawBonusTimer();
             }
             
@@ -486,38 +732,71 @@
         }
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft' && playerX > 0) {
+            if (gameOver || isPaused) return;
+
+            if (e.key === 'ArrowLeft' || e.key === 'a') {
                 playerX -= playerSpeed;
-            }
-            if (e.key === 'ArrowRight' && playerX < screenWidth - playerSize) {
+            } else if (e.key === 'ArrowRight' || e.key === 'd') {
                 playerX += playerSpeed;
             }
+
+            if (playerX < 0) playerX = 0;
+            if (playerX > screenWidth - playerWidth) playerX = screenWidth - playerWidth;
+
             if (e.key === 'p' || e.key === 'P') {
-                if (!gameOver) {
-                    if (isPaused) {
-                        resumeGame();
-                    } else {
-                        pauseGame();
-                    }
+                if (isPaused) {
+                    resumeGame();
+                } else {
+                    pauseGame();
                 }
             }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (gameOver || isPaused) return;
+            lastMouseX = e.clientX;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (gameOver || isPaused || lastMouseX === null) return;
+            
+            const deltaX = e.clientX - lastMouseX;
+            playerX += deltaX;
+            lastMouseX = e.clientX;
+            
+            if (playerX < 0) playerX = 0;
+            if (playerX > screenWidth - playerWidth) playerX = screenWidth - playerWidth;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            lastMouseX = null;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            lastMouseX = null;
         });
 
         canvas.addEventListener('touchstart', (e) => {
             if (gameOver || isPaused) return;
             const touch = e.touches[0];
-            touchX = touch.clientX;
+            lastMouseX = touch.clientX;
         });
 
         canvas.addEventListener('touchmove', (e) => {
             if (gameOver || isPaused) return;
             const touch = e.touches[0];
-            const deltaX = touch.clientX - touchX;
-            playerX += deltaX * 1.5;
-            touchX = touch.clientX;
-
+            if (lastMouseX !== null) {
+                const deltaX = touch.clientX - lastMouseX;
+                playerX += deltaX;
+                lastMouseX = touch.clientX;
+            }
+            
             if (playerX < 0) playerX = 0;
-            if (playerX > screenWidth - playerSize) playerX = screenWidth - playerSize;
+            if (playerX > screenWidth - playerWidth) playerX = screenWidth - playerWidth;
+        });
+        
+        canvas.addEventListener('touchend', () => {
+            lastMouseX = null;
         });
         
         window.addEventListener('resize', handleResize);
@@ -527,12 +806,21 @@
         resumeGameButton.addEventListener('click', resumeGame);
         pauseButton.addEventListener('click', pauseGame);
         
-        // Novo comportamento: recarregar a página para reiniciar o jogo
         playAgainButton.addEventListener('click', () => {
             window.location.reload();
         });
     </script>
-</body>
+    <audio id="bg-music" autoplay loop muted hidden>
+  <source src="https://archive.org/download/call-the-shot/call-the-shot.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+  const audio = document.getElementById("bg-music");
+  document.addEventListener("click", () => {
+    audio.muted = false;   // desmuta
+    audio.play();          // inicia o som
+  }, { once: true });       // só no primeiro clique
+</script>
 <!-- Overlay invisível -->
 <div id="overlay" style="
   position:fixed;
@@ -564,5 +852,4 @@
     }
   });
 </script>
-
 </html>

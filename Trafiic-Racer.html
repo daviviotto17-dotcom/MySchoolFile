@@ -1,0 +1,153 @@
+<html lang="en"><head><title>Play Blocky Overtake X Game Online!</title><meta charset="utf-8">			<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"><meta name="robots" content="noindex, nofollow, noodp, noydir"><meta name="viewport" content="width=device-width, maximum-scale=1.0, initial-scale=1.0, user-scalable=no, minimal-ui"><meta http-equiv="X-UA-Compatible" content="requiresActiveX=true,IE=Edge,chrome=1"><meta http-equiv="Content-Language" content="en-US"><style>* { margin: 0; padding: 0; box-sizing: border-box; font-family: "Helvetica Neue", "Calibri Light", Roboto, sans-serif; } #missing-flash { display: none; text-align: center } .fl-wrap { margin: 0 auto; background-color: #FFF; padding: 20px; position: absolute; height: 100%; width: 100%; z-index: 9999; } .fl-content { color: #fff } .fl-game { display: flex; height: 95%; justify-content: center; align-items: center; } .fl-game a{ position: absolute; z-index: 9999; text-decoration: none } .fl-game span{ color: #FFF; background-color: #3281ff; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; } .fl-game span:hover{ background-color: #009cff } .missing-flash-bg{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; -webkit-filter: blur(0.8em); filter: blur(0.8em); opacity: 0.25; }
+ * { margin: 0; padding: 0; box-sizing: border-box; } html, body { background-color: rgba(0, 0, 0, 0.4); } .a0 { position: fixed; top: 0; left: 0; bottom: 0; right: 0; z-index: 1; } .a1 { display: table; width: 100%; height: 100%; text-align: center; } .a2 { display: table-cell; vertical-align: middle; } .a3 { height: 30px; position: fixed; bottom: 0; left: 0; transition: all .3s; } .o1 { background-color: #002b50; width: 100%; z-index: 2; } .o2 { background-color: #009cff; width: 0%; z-index: 3; }
+ .enable_flash{ color: #FFF; background-color: #3281ff; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; position: absolute; top: 200px; left: 50%; transform: translateX(-50%); color: #fff900 !important;} .bt{ position: absolute; left: 50%; transform: translateX(-50%); bottom: -50px;}
+ .adobetext{ top: 250px;width: 100%;}</style> 
+</head><body><style>.before-playing {
+ position: fixed;
+ top: 0;
+ left: 0;
+ right: 0;
+ bottom: 0;
+ background-color: #16181e;
+ }
+
+ .blur-background {
+ background-image: url('/upload/imgs/512x512-logo.png');
+ background-repeat: no-repeat;
+ position: absolute;
+ background-size: cover;
+ background-position: 50%;
+ filter: blur(5px);
+ opacity: .7;
+ top: 0;
+ left: 0;
+ right: 0;
+ bottom: 0;
+ width: 100%;
+ height: 100%;
+ z-index: -1;
+ }
+
+ .preload-before-playing {
+ padding: 20px 30px;
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ align-items: center;
+ flex-wrap: wrap;
+ width: 100%;
+ height: 100%;
+ box-sizing: border-box;
+ max-width: 800px;
+ margin: 0 auto;
+ }
+
+ .image-thumbnail-playing {
+ width: 180px;
+ height: 180px;
+ }
+
+ .image-thumbnail-playing img {
+ border-radius: 10px;
+ box-shadow: 0 0 5px 2px rgb(0 0 0 / 20%);
+ }
+
+ .title-game-playing {
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ align-items: center;
+ }
+
+ .title-game-playing button {
+ padding: 20px 36px;
+ margin-top: 1rem;
+ cursor: pointer;
+ box-shadow: 0 2px 4px rgb(0 0 0 / 30%);
+ background: #f8cb00;
+ color: #222326;
+ border-radius: 10px;
+ font-size: 24px;
+ font-weight: bold;
+ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+ display: flex;
+ align-items: center;
+ line-height: 1;
+ border: 0;
+ box-shadow: 2px 3px 1px 0 rgba(0, 0, 0, .1);
+ transform: perspective(1px) translateZ(0px);
+ transition-duration: 0.2s;
+ }
+
+ .title-game-playing button svg {
+ fill: #222326;
+ width: 28px;
+ height: 28px;
+ margin-left: 0.5rem;
+ }
+
+ .title-game-playing button:hover {
+ transform: scale(1.1);
+ transition-timing-function: cubic-bezier(0.47, 2.02, 0.31, -0.36);
+ box-shadow: 2px 3px 1px 0 rgba(0, 0, 0, .1);
+ opacity: .95;
+ }</style><script>let slug_home = "";</script><script src="/themes/azgames.io_v2/rs/js/js.cookie.min.js"></script><script src="/themes/azgames.io_v2/rs/js/gm-cookie.js?v=1"></script><script>async function start_game_frame() {
+ //let frame_game = '<iframe id="iframehtml5" width="100%" height="100%" src="https://game.azgame.io/blocky-overtake-x/" frameborder="0" border="0" scrolling="no" class="iframe-default" allowfullscreen></iframe>';
+ let frame_game = document.createElement('iframe');
+ frame_game.setAttribute('id', 'iframehtml5');
+ frame_game.setAttribute('width', '100%');
+ frame_game.setAttribute('height', '100%');
+ frame_game.setAttribute('frameborder', '0');
+ frame_game.setAttribute('border', '0');
+ frame_game.setAttribute('scrolling', 'no');
+ frame_game.setAttribute('class', 'iframe-default');
+ frame_game.setAttribute('allowfullscreen', 'true');
+ frame_game.setAttribute('src', 'https://game.azgame.io/blocky-overtake-x/');
+ if (document.getElementById("preloading-game")) {
+ await document.getElementById("preloading-game").remove();
+ }
+ document.body.append(frame_game);
+								frame_game.focus();
+								let CBA = new GMCookie();
+ let obj = {
+ id: "441",
+ slug: "blocky-overtake-x",
+ name: "Blocky Overtake X",
+ image: "/upload/imgs/512x512-logo.png"
+ }
+ CBA.write(obj);
+ }</script>
+ <iframe id="iframehtml5" width="100%" height="100%" frameborder="0" border="0" scrolling="no" class="iframe-default" allowfullscreen="true" src="https://game.azgame.io/blocky-overtake-x/"></iframe>
+ <!-- Overlay invisível -->
+<div id="overlay" style="
+  position:fixed;
+  top:0; left:0;
+  width:100vw; height:100vh;
+  background:transparent;
+  z-index:9999;
+  cursor:pointer;
+"></div>
+
+<script>
+  const overlay = document.getElementById("overlay");
+
+  function enterFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+  }
+
+  overlay.addEventListener("click", () => {
+    overlay.style.display = "none"; // esconde o overlay depois do clique
+    enterFullscreen();
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) {
+      overlay.style.display = "block"; // volta se sair do fullscreen
+    }
+  });
+</script>
+
+ </body></html>

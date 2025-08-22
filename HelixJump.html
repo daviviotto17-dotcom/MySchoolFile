@@ -1,65 +1,101 @@
-<html lang="en"><head>
-            <title>Play Helix Jump 2 Game Online !</title>
-            <meta charset="utf-8">
-            <meta name="robots" content="noindex, nofollow, noodp, noydir">
-            <meta name="viewport" content="width=device-width, maximum-scale=1.0, initial-scale=1.0, user-scalable=no, minimal-ui">
-            <meta http-equiv="X-UA-Compatible" content="requiresActiveX=true,IE=Edge,chrome=1">
-            <meta http-equiv="Content-Language" content="en-US">
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Helvetica Neue", "Calibri Light", Roboto, sans-serif; } #missing-flash { display: none; text-align: center } .fl-wrap { margin: 0 auto; background-color: #FFF; padding: 20px; position: absolute; height: 100%; width: 100%; z-index: 9999; } .fl-content { color: #fff } .fl-game { display: flex; height: 95%; justify-content: center; align-items: center; } .fl-game a{ position: absolute; z-index: 9999; text-decoration: none } .fl-game span{ color: #FFF; background-color: #3281ff; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; } .fl-game span:hover{ background-color: #009cff } .missing-flash-bg{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; -webkit-filter: blur(0.8em); filter: blur(0.8em); opacity: 0.25; }
-                * { margin: 0; padding: 0; box-sizing: border-box; } html, body { background-color: rgba(0, 0, 0, 0.4); } .a0 { position: fixed; top: 0; left: 0; bottom: 0; right: 0; z-index: 1; } .a1 { display: table; width: 100%; height: 100%; text-align: center; } .a2 { display: table-cell; vertical-align: middle; } .a3 { height: 30px; position: fixed; bottom: 0; left: 0; transition: all .3s; } .o1 { background-color: #002b50; width: 100%; z-index: 2; } .o2 { background-color: #009cff; width: 0%; z-index: 3; }
-				.enable_flash{    color: #FFF;    background-color: #3281ff;   padding: 10px 15px;  border-radius: 5px;  cursor: pointer;   font-weight: bold;   text-transform: uppercase;    position: absolute; top: 200px; left: 50%; transform: translateX(-50%); color: #fff900 !important;} .bt{    position: absolute;    left: 50%;    transform: translateX(-50%);    bottom: -50px;}
-				.adobetext{ top: 250px;width: 100%;}
-            </style> 
+<html lang="en">
+<head>
+    <title>Play Helix Jump 2 Game Online !</title>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex, nofollow, noodp, noydir">
+    <meta name="viewport" content="width=device-width, maximum-scale=1.0, initial-scale=1.0, user-scalable=no, minimal-ui">
+    <meta http-equiv="X-UA-Compatible" content="requiresActiveX=true,IE=Edge,chrome=1">
+    <meta http-equiv="Content-Language" content="en-US">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Helvetica Neue", "Calibri Light", Roboto, sans-serif;
+        }
 
-        </head>
+        html, body {
+            background-color: #4B0082; /* Fundo roxo */
+            height: 100%;
+            width: 100%;
+            display: flex; /* Flexbox para centralizar */
+            justify-content: center; /* Centraliza horizontalmente */
+            align-items: center; /* Centraliza verticalmente */
+            overflow: hidden; /* Evita barras de rolagem */
+        }
 
-        <body>
-                             
-                                                                <iframe id="iframehtml5" width="100%" height="100%" src="https://helixjump2.com/gamdata/helixjump2/game.html" frameborder="0" border="0" scrolling="no" class="iframe-default" allowfullscreen=""></iframe>
-                     
-                            
-        
+        #iframe-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #iframehtml5 {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Estilos para telas maiores que 768px (modo paisagem/PC) */
+        @media (min-width: 768px) {
+            #iframe-container {
+                width: 30%; /* Ocupa 40% da largura */
+                height: 100%;
+                margin: 0 auto; /* Centraliza o contêiner */
+            }
+        }
     
-<!-- Overlay -->
-<div id="overlay" style="
-  position:fixed;
-  top:0; left:0;
-  width:100vw; height:100vh;
-  background:rgba(0,0,0,0.9);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-  cursor:pointer;
-  color:#fff;
-  font-size:2em;
-  font-family:sans-serif;
-  text-align:center;
-">
-  Clique para jogar em tela cheia
-</div>
+        /* Overlay */
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            cursor: pointer;
+            color: #fff;
+            font-size: 2em;
+            font-family: sans-serif;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="iframe-container">
+        <iframe id="iframehtml5" src="https://helixjump2.com/gamdata/helixjump2/game.html" scrolling="no" allowfullscreen=""></iframe>
+    </div>
 
-<script>
-  const overlay = document.getElementById("overlay");
+    <div id="overlay">
+        Clique para jogar em tela cheia
+    </div>
 
-  function enterFullscreen() {
-    let elem = document.documentElement;
-    if (elem.requestFullscreen) elem.requestFullscreen();
-    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-  }
+    <script>
+        const overlay = document.getElementById("overlay");
 
-  overlay.addEventListener("click", () => {
-    overlay.style.display = "none";
-    enterFullscreen();
-  });
+        function enterFullscreen() {
+            let elem = document.documentElement;
+            if (elem.requestFullscreen) elem.requestFullscreen();
+            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+            else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+        }
 
-  document.addEventListener("fullscreenchange", () => {
-    if (!document.fullscreenElement) {
-      overlay.style.display = "flex";
-    }
-  });
-</script>
+        overlay.addEventListener("click", () => {
+            overlay.style.display = "none";
+            enterFullscreen();
+        });
 
-</body></html>
+        document.addEventListener("fullscreenchange", () => {
+            if (!document.fullscreenElement) {
+                overlay.style.display = "flex";
+            }
+        });
+    </script>
+</body>
+</html>

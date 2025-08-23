@@ -118,36 +118,206 @@
  CBA.write(obj);
  }</script>
  <iframe id="iframehtml5" width="100%" height="100%" frameborder="0" border="0" scrolling="no" class="iframe-default" allowfullscreen="true" src="https://game.azgame.io/escape-road-2/"></iframe>
- <!-- Overlay invisível -->
-<div id="overlay" style="
-  position:fixed;
-  top:0; left:0;
-  width:100vw; height:100vh;
-  background:transparent;
-  z-index:9999;
-  cursor:pointer;
-"></div>
+ <style>
+    /* OVERLAY DEITAT TELA JUNTO COM TELA CHEIA*/
+    .orientation-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #f1f1f1;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        z-index: 10000;
+        transition: opacity 0.5s ease-in-out;
+        opacity: 0;
+    }
+
+    .orientation-overlay.active {
+        display: flex;
+        opacity: 1;
+    }
+
+    .orientation-overlay img {
+        width: 150px;
+        margin-bottom: 20px;
+        animation: rotatePhone 1.5s ease-in-out infinite;
+    }
+
+    .orientation-overlay p {
+        font-family: sans-serif;
+        font-size: 1.5rem;
+        color: #333;
+        padding: 0 20px;
+    }
+    
+    .CliqueAqui {
+      font-size: 2rem;
+      text-decoration: underline;
+      display: block;
+    }
+    
+    .HorizontalText {
+      font-size: 1.7rem;
+    }
+
+    /* Animação para a imagem do celular */
+    @keyframes rotatePhone {
+        0% { transform: rotate(0deg); }
+        25% { transform: rotate(-30deg); }
+        75% { transform: rotate(2deg); }
+        100% { transform: rotate(0deg); }
+    }
+</style>
+
+<div class="orientation-overlay" id="orientationOverlay">
+    <img src="https://i.ibb.co/KjMBTRvW/2141287-200.png" alt="Por favor, vire o celular">
+    <p>Por favor, vire a tela do seu celular para a <strong><span class="HorizontalText">horizontal</span></strong>, ou <span class="CliqueAqui"><strong>Clique aqui</strong></span></p>
+</div>
 
 <script>
-  const overlay = document.getElementById("overlay");
+    // Função para entrar em tela cheia e travar a orientação
+    async function enterFullscreenAndLockOrientation() {
+        const docElem = document.documentElement;
 
-  function enterFullscreen() {
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) elem.requestFullscreen();
-    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+        // Verifica se o site já está em tela cheia para evitar a execução desnecessária
+        const isFullscreen = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+        
+        if (!isFullscreen) {
+            try {
+                if (docElem.requestFullscreen) {
+                    await docElem.requestFullscreen();
+                } else if (docElem.mozRequestFullScreen) {
+                    await docElem.mozRequestFullScreen();
+                } else if (docElem.webkitRequestFullscreen) {
+                    await docElem.webkitRequestFullscreen();
+                } else if (docElem.msRequestFullscreen) {
+                    await docElem.msRequestFullscreen();
+                }
+                
+                if (screen.orientation && screen.orientation.lock) {
+                    await screen.orientation.lock('landscape').catch(e => console.warn("Não foi possível travar a orientação."));
+                }
+
+            } catch (error) {
+                console.error("Erro ao tentar entrar em tela cheia:", error);
+            }
+        }
+    }
+
+    // Função para mostrar ou esconder o aviso de orientação
+    function handleOrientationOverlay() {
+        const overlay = document.getElementById('orientationOverlay');
+        if (window.innerHeight > window.innerWidth) {
+            overlay.classList.add('active');
+        } else {
+            overlay.classList.remove('active');
+        }
+    }
+
+    // Adiciona o evento de clique no corpo para iniciar a ação de tela cheia
+    document.body.addEventListener('click', enterFullscreenAndLockOrientation);
+
+    // Adiciona o evento de clique no botão "Clique aqui"
+    document.querySelector('.CliqueAqui').addEventListener('click', (e) => {
+        e.stopPropagation();
+        enterFullscreenAndLockOrientation();
+    });
+
+    // Monitora a mudança de orientação e o redimensionamento
+    window.addEventListener('orientationchange', handleOrientationOverlay);
+    window.addEventListener('resize', handleOrientationOverlay);
+
+    // Executa na primeira vez que a página é carregada
+    window.addEventListener('load', handleOrientationOverlay);
+</script>
+<style>
+  /* CARREGAMENTO OVERLAY! */
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f1f1f1; /* Cor de fundo da tela de carregamento */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 1s ease-in-out;
   }
 
-  overlay.addEventListener("click", () => {
-    overlay.style.display = "none"; // esconde o overlay depois do clique
-    enterFullscreen();
-  });
+  .loading-container {
+    width: 300px;
+    text-align: center;
+  }
 
-  document.addEventListener("fullscreenchange", () => {
-    if (!document.fullscreenElement) {
-      overlay.style.display = "block"; // volta se sair do fullscreen
+  .loading-text {
+    font-family: sans-serif;
+    font-size: 1.2rem;
+    color: #333;
+    margin-bottom: 15px;
+  }
+
+  /* Estilos para a barra de progresso */
+  .loading-bar-container {
+    width: 100%;
+    height: 15px;
+    background-color: #ddd; /* Cor da barra vazia */
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .loading-bar-fill {
+    height: 100%;
+    width: 0;
+    background-color: #4CAF50; /* Cor da barra cheia */
+    border-radius: 10px;
+    animation: fillBar 8s ease-in-out forwards;
+  }
+
+  /* Animação para preencher a barra */
+  @keyframes fillBar {
+    from {
+      width: 0;
     }
+    to {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-container">
+    <div class="loading-text">Carregando...</div>
+    <div class="loading-bar-container">
+      <div class="loading-bar-fill"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Script para esconder a tela de carregamento após a animação
+  window.addEventListener('load', () => {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    
+    // A animação da barra de progressos (definido no CSS)
+    // Usamos um setTimeout para garantir que a tela de carregamento
+    // só desaparecerá após a barra estar completamente cheia.
+    setTimeout(() => {
+      loadingOverlay.style.opacity = '0';
+      
+      // Remove a tela de carregamento completamente do DOM após a transição
+      // para que ela não interfira mais na interação com a página.
+      setTimeout(() => {
+        loadingOverlay.style.display = 'none';
+      }, 870); // Este tempo deve ser igual à transição de opacidade do CSS
+      
+    }, 7000);
   });
 </script>
-
  </body></html>

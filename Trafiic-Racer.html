@@ -235,90 +235,34 @@
     // Executa na primeira vez que a página é carregada
     window.addEventListener('load', handleOrientationOverlay);
 </script>
-<style>
-  /* CARREGAMENTO OVERLAY! */
-  .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #f1f1f1; /* Cor de fundo da tela de carregamento */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    transition: opacity 1s ease-in-out;
-  }
-
-  .loading-container {
-    width: 300px;
-    text-align: center;
-  }
-
-  .loading-text {
-    font-family: sans-serif;
-    font-size: 1.2rem;
-    color: #333;
-    margin-bottom: 15px;
-  }
-
-  /* Estilos para a barra de progresso */
-  .loading-bar-container {
-    width: 100%;
-    height: 15px;
-    background-color: #ddd; /* Cor da barra vazia */
-    border-radius: 10px;
-    overflow: hidden;
-  }
-
-  .loading-bar-fill {
-    height: 100%;
-    width: 0;
-    background-color: #4CAF50; /* Cor da barra cheia */
-    border-radius: 10px;
-    animation: fillBar 8s ease-in-out forwards;
-  }
-
-  /* Animação para preencher a barra */
-  @keyframes fillBar {
-    from {
-      width: 0;
-    }
-    to {
-      width: 100%;
-    }
-  }
-</style>
-
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="loading-container">
-    <div class="loading-text">Carregando...</div>
-    <div class="loading-bar-container">
-      <div class="loading-bar-fill"></div>
-    </div>
-  </div>
-</div>
+<!-- Overlay invisível -->
+<div id="overlay" style="
+  position:fixed;
+  top:0; left:0;
+  width:100vw; height:100vh;
+  background:transparent;
+  z-index:9999;
+"></div>
 
 <script>
-  // Script para esconder a tela de carregamento após a animação
-  window.addEventListener('load', () => {
-    const loadingOverlay = document.getElementById('loadingOverlay');
-    
-    // A animação da barra de progressos (definido no CSS)
-    // Usamos um setTimeout para garantir que a tela de carregamento
-    // só desaparecerá após a barra estar completamente cheia.
-    setTimeout(() => {
-      loadingOverlay.style.opacity = '0';
-      
-      // Remove a tela de carregamento completamente do DOM após a transição
-      // para que ela não interfira mais na interação com a página.
-      setTimeout(() => {
-        loadingOverlay.style.display = 'none';
-      }, 870); // Este tempo deve ser igual à transição de opacidade do CSS
-      
-    }, 7000);
+  const overlay = document.getElementById("overlay");
+
+  function enterFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+  }
+
+  overlay.addEventListener("click", () => {
+    overlay.style.display = "none"; // esconde o overlay depois do clique
+    enterFullscreen();
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) {
+      overlay.style.display = "block"; // volta se sair do fullscreen
+    }
   });
 </script>
-
  </body></html>

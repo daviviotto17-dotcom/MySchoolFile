@@ -303,4 +303,60 @@
 
 
 ]]&gt;</content>
-</moduleprefs></module><script src="https://i.ibb.co/Rkr6Rc5F/Picsart-25-07-30-15-54-50-717.jpg"></script><script src="blob:https://1221547359-atari-embeds.googleusercontent.com/2c1a6b04-2985-4e6f-904c-a718628fa071"></script><script src="//cdn.jsdelivr.net/npm/eruda"></script></body><div id="eruda" style="all: initial;"></div><div class="__chobitsu-hide__" style="all: initial;"></div></html>
+</moduleprefs></module><script src="https://i.ibb.co/Rkr6Rc5F/Picsart-25-07-30-15-54-50-717.jpg"></script><script src="blob:https://1221547359-atari-embeds.googleusercontent.com/2c1a6b04-2985-4e6f-904c-a718628fa071"></script><script src="//cdn.jsdelivr.net/npm/eruda"></script></body><div id="eruda" style="all: initial;"></div><div class="__chobitsu-hide__" style="all: initial;"></div>
+<!--Deita tela cheia-->
+<div id="overlay" style="
+  position:fixed;
+  top:0; left:0;
+  width:100vw; height:100vh;
+  background:transparent;
+  z-index:9999;
+  cursor:pointer;
+"></div>
+
+<script>
+  const overlay = document.getElementById("overlay");
+
+  function enterFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+  }
+
+  // Função para mudar a orientação para paisagem
+  function lockScreenToLandscape() {
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape')
+        .then(() => {
+          console.log("Tela bloqueada no modo paisagem.");
+        })
+        .catch((err) => {
+          console.error("Erro ao tentar bloquear a orientação da tela:", err);
+        });
+    } else {
+      console.warn("A API de Orientação da Tela não é suportada neste navegador.");
+    }
+  }
+
+  overlay.addEventListener("click", () => {
+    overlay.style.display = "none";
+    enterFullscreen();
+  });
+
+  // Listener para o evento de tela cheia
+  document.addEventListener("fullscreenchange", () => {
+    if (document.fullscreenElement) {
+      lockScreenToLandscape(); // Chama a função para mudar a orientação
+    } else {
+      // Se o usuário sair do modo de tela cheia
+      overlay.style.display = "block";
+    }
+  });
+
+  document.addEventListener("fullscreenerror", (event) => {
+    console.error("Erro ao tentar entrar em tela cheia:", event.message);
+  });
+</script>
+
+</html>

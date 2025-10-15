@@ -1,0 +1,347 @@
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/familiapablo/clasromom@main/style.css">
+
+    <style>
+        /* Estilos para o jogo preencher a tela e remover a barra de rolagem */
+        canvas:focus {
+            outline: none;
+        }
+
+        html, body {
+            /* Essencial para tela cheia e sem scroll */
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%; /* Adicionado para garantir 100% de largura */
+            
+            /* Melhorias de usabilidade */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+        }
+        
+        /* Garante que o container Unity também ocupe 100% */
+        #unity-container {
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Garante que o canvas do jogo preencha o container */
+        #unity-canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body class="dark">
+
+<div id="unity-container" class="unity-mobile">
+    <canvas id="unity-canvas" tabindex="-1" style="cursor: default;"></canvas>
+</div>
+
+<div id="loading-cover" style="background: url(&quot;https://cdn.jsdelivr.net/gh/familiapablo/clasromom@main/background.png&quot;) center center / cover; display: none;">
+    <div id="unity-loading-bar">
+        <div id="unity-logo"><img src="https://i.ibb.co/5x4CJ87W/Logo-Unity-Kame-Game.png"></div>
+        <div id="unity-progress-bar-empty" style="display: none;">
+            <div id="unity-progress-bar-full" style="width: 100%;"></div>
+        </div>
+        <div class="spinner" style="display: none;"></div>
+    </div>
+</div>
+<script>
+    const hideFullScreenButton = "";
+    const buildUrl = "https://cdn.jsdelivr.net/gh/familiapablo/clasromom@main/Build";
+    const loaderUrl = buildUrl + "/YandexBrotli.loader.js";
+    const config = {
+        dataUrl: buildUrl + "/YandexBrotli.data.br",
+        frameworkUrl: buildUrl + "/YandexBrotli.framework.js",
+        codeUrl: buildUrl + "/YandexBrotli.wasm.br",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "Brain massage",
+        productName: "Car Ball 3D",
+        productVersion: "0.0.52"
+    };
+
+    const container = document.querySelector("#unity-container");
+    const canvas = document.querySelector("#unity-canvas");
+    const loadingCover = document.querySelector("#loading-cover");
+    const progressBarEmpty = document.querySelector("#unity-progress-bar-empty");
+    const progressBarFull = document.querySelector("#unity-progress-bar-full");
+    const spinner = document.querySelector('.spinner');
+
+    // Parçaları birleştirme fonksiyonu
+    async function loadAndMergeWasm() {
+        const partUrls = [
+            `${buildUrl}/YandexBrotli.wasm.br.part001`,
+            `${buildUrl}/YandexBrotli.wasm.br.part002`,
+            `${buildUrl}/YandexBrotli.wasm.br.part003`,
+            `${buildUrl}/YandexBrotli.wasm.br.part004`,
+            `${buildUrl}/YandexBrotli.wasm.br.part005`
+        ];
+
+        // Todas as partes são carregadas e unidas
+        const responses = await Promise.all(
+            partUrls.map(url => fetch(url).then(res => res.arrayBuffer()))
+        );
+
+        // Parçaları birleştir
+        const totalLength = responses.reduce((sum, buffer) => sum + buffer.byteLength, 0);
+        const mergedArray = new Uint8Array(totalLength);
+        let offset = 0;
+
+        for (const buffer of responses) {
+            mergedArray.set(new Uint8Array(buffer), offset);
+            offset += buffer.byteLength;
+        }
+
+        // Birleştirilmiş dosyayı Blob olarak oluştur
+        const wasmBlob = new Blob([mergedArray], { type: 'application/wasm' });
+        const wasmUrl = URL.createObjectURL(wasmBlob);
+
+        // Unity config'deki codeUrl'i güncelle
+        config.codeUrl = wasmUrl;
+        
+        
+        // Unity loader'ı başlat
+        const script = document.createElement('script');
+        script.src = loaderUrl;
+        script.onload = () => {
+            createUnityInstance(canvas, config, (progress) => {
+                // İlerleme çubuğu güncelleme
+                progressBarFull.style.width = 100 * progress + "%";
+                if (progress === 1) {
+                    loadingCover.style.display = "none";
+                    spinner.style.display = "none";
+                }
+            }).catch((error) => {
+                console.error("Unity yükleme hatası:", error);
+            });
+        };
+        document.body.appendChild(script);
+    }
+
+    // Parça birleştirmeyi başlat
+    loadAndMergeWasm();
+
+    const canFullscreen = (function () {
+        for (const key of [
+            'exitFullscreen',
+            'webkitExitFullscreen',
+            'webkitCancelFullScreen',
+            'mozCancelFullScreen',
+            'msExitFullscreen',
+        ]) {
+            if (key in document) {
+                return true;
+            }
+        }
+        return false;
+    }());
+
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        container.className = "unity-mobile";
+        
+    }
+        
+    loadingCover.style.background = "url('https://cdn.jsdelivr.net/gh/familiapablo/clasromom@main/background.png') center / cover";
+
+    loadingCover.style.display = "";
+
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    function FocusGame() {
+        window.focus();
+        canvas.focus();
+    }
+
+    window.addEventListener('pointerdown', FocusGame);
+    window.addEventListener('touchstart', FocusGame);
+
+    let StartUnityInstance;
+    let myGameInstance;
+    let ysdk = null; 
+    
+    let environmentData = {
+        language: "en",
+        domain: "default_domain",
+        deviceType: "desktop",
+        isMobile: false,
+        isDesktop: true,
+        isTablet: false,
+        isTV: false,
+        appID: "default_app_id",
+        browserLang: navigator.language || "en",
+        payload: null,
+        promptCanShow: false,
+        reviewCanShow: false,
+        platform: navigator.platform,
+        browser: (function() {
+            let userAgent = navigator.userAgent;
+            if (userAgent.includes("YaBrowser")) return "Yandex";
+            if (userAgent.includes("OPR") || userAgent.includes("Opera")) return "Opera";
+            if (userAgent.includes("Firefox")) return "Firefox";
+            if (userAgent.includes("MSIE") || userAgent.includes("Trident")) return "IE";
+            if (userAgent.includes("Edge")) return "Edge";
+            if (userAgent.includes("Chrome")) return "Chrome";
+            if (userAgent.includes("Safari")) return "Safari";
+            return "Other";
+        })()
+    };
+    
+    let cloudSaves = 'noData';
+    let paymentsData = 'none';
+    let playerData = 'noData';
+    let player = null;
+    let payments = null;
+    let initGame = false;
+    let nowFullAdOpen = false;
+
+    // Funções de Fallback Simples (sempre retornam 'none'/'noData' ou fazem nada)
+    function GetPayments() { console.warn("GetPayments is not implemented"); return Promise.resolve("none"); }
+    function SaveCloud() { console.warn("SaveCloud is not implemented"); }
+    function LoadCloud() { console.warn("LoadCloud is not implemented"); return Promise.resolve("noData"); }
+    function InitPlayer() { console.warn("InitPlayer is not implemented"); return Promise.resolve("noData"); }
+
+    function FullAdShow() {
+        try {
+            if (!nowFullAdOpen) {
+                nowFullAdOpen = true;
+                if (initGame) {
+                    myGameInstance.SendMessage("YandexGame", "OpenFullAd");
+                }
+                // Simulação de duração do anúncio
+                setTimeout(() => {
+                    nowFullAdOpen = false;
+                    if (initGame) {
+                        myGameInstance.SendMessage("YandexGame", "CloseFullAd", "true");
+                    }
+                    FocusGame();
+                }, 500);
+            }
+        } catch (error) {}
+    }
+
+    function RewardedShow(rewardId) {
+        try {
+            myGameInstance.SendMessage("YandexGame", "RewardVideo", rewardId);
+            function closeRewardedAd() {
+                myGameInstance.SendMessage("YandexGame", "CloseRewardVideo");
+                FocusGame();
+            }
+            closeRewardedAd();
+        } catch (error) {}
+    }
+
+    function StickyAdActivity() { console.warn("StickyAdActivity is not implemented"); }
+    function Review() { console.warn("Review is not implemented"); }
+    function PromptShow() { console.warn("PromptShow is not implemented"); }
+    function InitLeaderboards() { console.warn("InitLeaderboards is not implemented"); }
+    function GetLeaderboardScores() { console.warn("GetLeaderboardScores is not implemented"); }
+    function SetLeaderboardScores() { console.warn("SetLeaderboardScores is not implemented"); }
+    function ConsumePurchase() { console.warn("ConsumePurchase is not implemented"); }
+    function ConsumePurchases() { console.warn("ConsumePurchases is not implemented"); } 
+
+    function InitGame() {
+        try {
+            console.log('Init Game Success');
+            initGame = true;
+            if (nowFullAdOpen === true && myGameInstance != null) {
+                myGameInstance.SendMessage('YandexGame', 'OpenFullAd');
+            }
+        } catch (error) {
+            console.error("InitGame sırasında hata:", error);
+        }
+    }
+
+    window.addEventListener("unhandledrejection", function(event) {
+        console.warn("Hata es geçildi:", event.reason);
+        event.preventDefault();
+    });
+</script>
+
+<script>
+// Yandex SDK Fallback (Mantido para compatibilidade, mas não mostra anúncios)
+(function() {
+  const fakeFn = () => {};
+  const fakePromise = () => Promise.resolve({ value: false, reason: "no_sdk" });
+
+  window.sdk = window.sdk || {
+    getPlayer: () => Promise.resolve({
+      getMode: () => "lite",
+      getData: () => Promise.resolve({ data: "" }),
+      setData: () => Promise.resolve(),
+    }),
+    feedback: {
+      canReview: fakePromise,
+      requestReview: fakePromise
+    },
+    adv: {
+      showRewardedVideo: fakePromise,
+      showFullscreenAdv: fakePromise
+    },
+    getLeaderboards: fakePromise,
+    getPayments: fakePromise,
+  };
+
+  window.ysdk = window.ysdk || window.sdk;
+  window.YandexSDK = window.YandexSDK || {};
+  window.YandexGame = window.YandexGame || {};
+
+  window.showFullScreenAdv = window.showFullScreenAdv || fakeFn;
+  window.ShowInter = window.ShowInter || fakeFn;
+  window.ShowRewarded = window.ShowRewarded || fakeFn;
+  window.initPlayer = window.initPlayer || fakeFn;
+  window.auth = window.auth || fakeFn;
+
+  window.unityInstance = window.unityInstance || {
+    SendMessage: function() { /* yok say */ }
+  };
+
+  console.log("...");
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/gh/familiapablo/clasromom@main/Build/YandexBrotli.loader.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/familiapablo/clasromom@main/Build/YandexBrotli.framework.js"></script>
+</body>
+</html>
+<!-- Overlay invisível -->
+<div id="overlay" style="
+  position:fixed;
+  top:0; left:0;
+  width:100vw; height:100vh;
+  background:transparent;
+  z-index:9999;
+  cursor:pointer;
+"></div>
+
+<script>
+  const overlay = document.getElementById("overlay");
+
+  function enterFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+  }
+
+  overlay.addEventListener("click", () => {
+    overlay.style.display = "none"; // esconde o overlay depois do clique
+    enterFullscreen();
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) {
+      overlay.style.display = "block"; // volta se sair do fullscreen
+    }
+  });
+</script>

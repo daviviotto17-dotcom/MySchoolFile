@@ -301,3 +301,67 @@
     }
   });
 </script>
+
+
+<script>
+    // --- console optimization---
+
+    // 1. Variáveis de controle
+    let logCount = 0;
+    const MAX_LOGS = 0;
+    
+    // Lista dos métodos que queremos limitar/controlar, incluindo 'error'
+    const metodosParaLimitar = ['log', 'info', 'warn', 'error', 'debug']; // 'debug' e outros também podem ser úteis
+
+    // 2. Cria a função de limitação
+    function limitedConsoleFunction(originalFunction, methodName) {
+        return function(...args) {
+            // Verifica o Limite
+            if (logCount >= MAX_LOGS) {
+                // Se atingir o limite, limpa e reseta
+                
+                // IMPORTANTE: Para que console.clear() funcione de forma confiável mesmo se o
+                // próprio método clear tiver sido sobrescrito (o que não faremos aqui, mas é bom garantir),
+                // usamos o console.clear() nativo.
+                
+                if (window.console && window.console.clear) {
+                    window.console.clear(); 
+                }
+
+                logCount = 0;
+                
+                // Opcional: Avisa que o console foi limpo para fins de depuração.
+                // Usamos o alert ou uma div na tela, pois o console.log nativo foi substituído.
+                // Neste caso, vou usar o console.log original salvo ANTES de sobrescrevermos.
+                const logAviso = console.log; // Aqui, se o código for executado em um bloco só,
+                                              // a primeira definição de console.log não será sobrescrita.
+
+                // Chamamos a função original de log/error/warn para imprimir o aviso
+                if (originalFunction.name === 'error') {
+                   // Usamos a função nativa de log ou info para o aviso, se quisermos evitar recursão
+                   console.log(`--- Console Limpo APÓS atingir ${MAX_LOGS} logs/erros. Contagem resetada. ---`);
+                }
+                
+                // Não registra o log atual, apenas o aviso de limpeza.
+                return;
+            }
+
+            // Registra o log/erro usando a função original salva
+            originalFunction.apply(console, args);
+            
+            // Incrementa o contador
+            logCount++;
+        };
+    }
+
+    // 3. Aplica o 'Monkey Patching' (Sobrescrita)
+    metodosParaLimitar.forEach(methodName => {
+        // Salva a função original antes de sobrescrever
+        const originalMethod = console[methodName];
+        if (originalMethod) {
+            // Cria uma cópia da função original para ser usada no escopo da função limitada
+            const boundOriginalMethod = originalMethod.bind(console);
+            console[methodName] = limitedConsoleFunction(boundOriginalMethod, methodName);
+        }
+    });
+</script>

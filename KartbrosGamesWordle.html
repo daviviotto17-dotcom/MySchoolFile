@@ -1,0 +1,1244 @@
+<html lang="en-us" style="--vh: 5.54px;">
+
+<head>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* ESTILOS DA TELA DE CARREGAMENTO PERSONALIZADA (Início da modificação) */
+        /* ------------------------------------------------------------------ */
+        #custom-loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 1s ease-out; /* Para o fade-out */
+        }
+
+        #loading-text-custom {
+            color: #FFFFFF;
+            font-family: 'Arial Black', Gadget, sans-serif;
+            font-size: 8vw;
+            line-height: 0.8;
+            text-align: center;
+            margin-bottom: 30px;
+            user-select: none;
+        }
+
+        #loading-text-custom .line-break {
+            display: block;
+            font-size: 4vw;
+            color: #d32f2f; /* Cor diferente para GAME */
+        }
+
+        #loading-progress-container {
+            width: 50%;
+            max-width: 400px;
+            height: 12px;
+            background-color: #333333;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+        }
+
+        #loading-progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #00FF00;
+            transition: width 0.1s linear;
+        }
+
+        /* Opcional: garantir que a antiga barra Unity não apareça */
+        #unity-loading-bar {
+            display: none !important;
+        }
+        /* ------------------------------------------------------------------ */
+        /* ESTILOS DA TELA DE CARREGAMENTO PERSONALIZADA (Fim da modificação) */
+        /* ------------------------------------------------------------------ */
+    </style>
+    <body>
+        <module>
+            <moduleprefs title="Google.com">
+                <content type="html"><meta charset="utf-8">
+
+  <script>
+    function fit() {
+      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    }
+
+    // 1st run
+    fit();
+
+    // instant reaction to orientation / classic resizes
+    addEventListener('resize', fit, { passive: true });
+
+    // extra pass once the URL bar has fully hidden (iOS/Chrome-Android quirk)
+    addEventListener('orientationchange', () => {
+      setTimeout(fit, 450);           // tweak if you still see a gap
+    });
+
+    // visual-viewport change (iOS 15+ / Chrome 108+)
+    if (window.visualViewport) {
+      visualViewport.addEventListener('resize', fit, { passive: true });
+    }
+  </script>
+
+  <style>
+    /* Basic styling */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000000;
+      color: #000;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .body::-webkit-scrollbar {
+      /* WebKit */
+      width: 0px;
+    }
+
+    /* Layout structure - main wrapper */
+    /* .page-wrapper {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    } */
+
+    /* Fix for scrolling when mouse is over canvas - removed pointer-events: none */
+    /* Game section - made to respect pointer events */
+    .game-section {
+      width: 100%;
+      height: 100%;
+      /* aspect-ratio: 16 / 9; */
+      background: #000;
+      position: relative;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Loading screen */
+    #unity-loading-bar {
+      background: #000;
+      position: absolute;
+      top: 60%;
+      align-items: center;
+      justify-content: center;
+      z-index: 15;
+    }
+
+    /* Info section */
+    .info-section {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      position: relative;
+      padding: 20px 0;
+    }
+
+    #unity-canvas {
+      background: #000;
+      width: calc(100%);
+      float: left;
+      /* display: block; */
+      /* Add object-fit-like behavior for canvas */
+      /* position: relative; */
+    }
+
+
+    #unity-warning {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      pointer-events: none;
+      max-width: 90%;
+      text-align: center;
+      display: none;
+    }
+
+    html,
+    body,
+    .game-section,
+    #unity-canvas {
+      /* width: 100vw; */
+      height: calc(var(--vh, 1vh)*100);
+      /* replaces 100 vh */
+      overscroll-behavior: none;
+      /* avoids rubber-band scroll */
+    }
+
+    /* Container for game info */
+    .container {
+      width: calc(100% - 420px);
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    /* Content styling */
+    p {
+      font-size: 1.2rem;
+      line-height: 1.6;
+    }
+
+    h1 {
+      color: #d32f2f;
+      text-align: center;
+    }
+
+    h2 {
+      color: #1976d2;
+    }
+
+    .changelog {
+      background: #e3f2fd;
+      padding: 10px;
+      border-left: 5px solid #1976d2;
+    }
+
+    .faq {
+      margin-top: 20px;
+    }
+
+    .faq-item {
+      margin-bottom: 15px;
+    }
+
+    .faq-item h3 {
+      margin: 0;
+      color: #d32f2f;
+    }
+
+    .social {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    /* Social links */
+    .social-links {
+      margin-top: 40px;
+      text-align: center;
+    }
+
+    .social-links a {
+      margin: 0 10px;
+      display: inline-block;
+    }
+
+    .social-links img {
+      width: 30px;
+      height: 30px;
+    }
+
+    a {
+      color: hotpink;
+    }
+
+    #adContainerMainMenu {
+      position: absolute;
+      /* no longer fixed */
+      top: 50%;
+      /* center vertically in game-section */
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    #adContainerMainMenu>div {
+      pointer-events: auto;
+    }
+
+    /* Individual ad elements should receive clicks */
+    #kartbros-io_300x250,
+    #kartbros-io_300x250_2 {
+      pointer-events: auto;
+      /* Only the actual ad elements get clicks */
+    }
+
+    #adContainerBottom {
+      position: absolute;
+      bottom: 1px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      text-align: center;
+      display: none;
+      /* Initially hidden like other ad containers */
+      pointer-events: none;
+    }
+
+    #adContainerBottom>div {
+      pointer-events: auto;
+    }
+
+    #adContainerTop {
+      position: absolute;
+      top: 10px;
+      /* center vertically in game-section */
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: none;
+      /* Initially hidden like main menu ads */
+      pointer-events: none;
+    }
+
+    #adContainerTop>div {
+      pointer-events: auto;
+    }
+
+    /* Individual ad elements should receive clicks */
+    #kartbros-io_728x90 {
+      pointer-events: auto;
+    }
+
+    /* Pillar ad containers for character/track select screens */
+    #adContainerPillars {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      pointer-events: none;
+      display: none;
+      /* Initially hidden */
+    }
+
+    #adContainerPillars>div {
+      pointer-events: auto;
+    }
+
+    /* Individual pillar ad elements */
+    #kartbros-io_160x600 {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 160px;
+      height: 600px;
+      pointer-events: auto;
+      z-index: 1001;
+    }
+
+    #kartbros-io_160x600_2 {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 160px;
+      height: 600px;
+      pointer-events: auto;
+      z-index: 1001;
+    }
+
+    /* Video ad overlay */
+    #videoAdOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #videoad {
+      width: 960px;
+      height: 540px;
+      background: #000;
+    }
+
+    /* Spinning wheel animation */
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spinning-wheel {
+      display: inline-block;
+      transform-origin: center;
+      animation: spin 1s linear infinite;
+    }
+  </style>
+
+<script>
+  if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('TemplateData/sw.js')
+  }
+</script>
+
+  <script>
+    window.aiptag = window.aiptag || { cmd: [] };
+    aiptag.cmd.display = aiptag.cmd.display || [];
+    aiptag.cmd.player = aiptag.cmd.player || [];
+
+    // CMP tool settings
+    aiptag.cmp = {
+      show: true,
+      button: true,
+      buttonText: "Privacy settings",
+      buttonPosition: "bottom-left"
+    };
+
+    // Initialize the video ad player
+    aiptag.cmd.player.push(function () {
+      aiptag.adplayer = new aipPlayer({
+        AD_WIDTH: 960,
+        AD_HEIGHT: 540,
+        AD_DISPLAY: 'default', // default, fullscreen, fill, center, modal-center
+        LOADING_TEXT: 'loading advertisement',
+        PREROLL_ELEM: function () { return document.getElementById('videoad'); },
+        AIP_COMPLETE: function (state) {
+          console.log("Video Ad Completed: " + state);
+          if (typeof SendEvent === "function") {
+            SendEvent("event", "aip_video_completed", { state: state });
+          }
+          if (typeof completeVideoAd === "function") {
+            completeVideoAd(false);
+          }
+        }
+      });
+    });
+
+  </script>
+  <script>
+    (function () {
+      function detectMsStart() {
+        var uri = window.location.pathname + window.location.search + window.location.hash;
+        var lowerUri = (uri || '').toLowerCase();
+        var params = new URLSearchParams(window.location.search || '');
+        if (params.has('ms') || params.has('msstart_sdk_init')) {
+          return true;
+        }
+        if (lowerUri.indexOf('msstart_sdk_init') !== -1) {
+          return true;
+        }
+        return lowerUri.indexOf('ms') !== -1;
+      }
+
+      window.isMsStart = detectMsStart();
+      if (window.isMsStart) {
+        window.msStart = true;
+        var msSdkScript = document.createElement('script');
+        msSdkScript.src = 'https://assets.msn.com/staticsb/statics/latest/msstart-games-sdk/msstart-v1.0.0-rc.19.min.js';
+        msSdkScript.async = true;
+        msSdkScript.addEventListener('load', function () {
+          if (typeof window.loadMsVideoAsync === 'function') {
+            window.loadMsVideoAsync();
+          }
+        });
+        document.head.appendChild(msSdkScript);
+      }
+    })();
+  </script>
+
+
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+
+    gtag('config', 'G-1BS464XC3Y865', { cookie_flags: 'secure;samesite=none' });
+  </script>
+
+  <script>
+    // Generate unique session ID
+    function generateSessionId() {
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let result = '';
+      for (let i = 0; i < 25; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+    
+    // Session ID for tracking
+    var sid = generateSessionId();
+    
+    // Status update function that records session activity
+    function updateStatus(fromEvent = false) {
+      const req = new XMLHttpRequest();
+      var aStr = "recordsession.php?s="+sid;
+      if(fromEvent == true)  aStr = aStr + "&e=1"
+      req.open("GET", aStr);
+      req.send();
+    }
+    
+    function SendEvent(theEvent, theAction, theParms = '') {
+      if(theParms == '') {
+        gtag(theEvent, theAction);
+      } else {
+        gtag(theEvent, theAction, theParms);
+      }
+      updateStatus(true);
+    }
+    
+    function GA4_SendEvent(eventName, paramsJson) {
+      // Parse parameters if provided
+      var parsedParams;
+      if (paramsJson && paramsJson.length > 0) {
+        try { 
+          parsedParams = JSON.parse(paramsJson); 
+        } catch (e) { 
+          parsedParams = undefined;
+        }
+      }
+      
+      // Call SendEvent function
+      if (parsedParams === undefined) {
+        SendEvent('event', eventName);
+      } else {
+        SendEvent('event', eventName, parsedParams);
+      }
+    }
+    
+  updateStatus(false);
+  </script>
+  <script>
+    var msVideoInstanceId = null;
+    var lastUnitPlayed = null;
+
+    function trackAdEvent(name, data) {
+      if (typeof SendEvent === "function") {
+        if (data && typeof data === "object") {
+          SendEvent("event", name, data);
+        } else {
+          SendEvent("event", name);
+        }
+      }
+    }
+
+    function focusGameCanvas() {
+      window.focus();
+      var contentElement = document.getElementById("openfl-content") || document.getElementById("unity-canvas");
+      if (contentElement && typeof contentElement.focus === "function") {
+        contentElement.focus();
+      }
+    }
+
+    function completeVideoAd(isBlocked) {
+      if (typeof window.Main !== "undefined" && typeof window.Main.DoneVideoAd === "function") {
+        try {
+          if (typeof isBlocked === "undefined") {
+            window.Main.DoneVideoAd();
+          } else {
+            window.Main.DoneVideoAd(isBlocked);
+          }
+        } catch (err) {
+          console.warn("Main.DoneVideoAd error", err);
+        }
+      }
+      focusGameCanvas();
+    }
+
+    function loadMsVideoAsync() {
+      if (!window.isMsStart || typeof window.$msstart === "undefined" || typeof window.$msstart.loadAdsAsync !== "function") {
+        msVideoInstanceId = null;
+        return;
+      }
+
+      window.$msstart.loadAdsAsync().then(function (adInstance) {
+        msVideoInstanceId = adInstance && adInstance.instanceId;
+      }).catch(function (error) {
+        console.log("MS loadAdsAsync error", error);
+        msVideoInstanceId = null;
+      });
+
+      if (typeof window.SetupMSNotification === "function") {
+        try {
+          window.SetupMSNotification();
+        } catch (notificationError) {
+          console.warn("SetupMSNotification error", notificationError);
+        }
+      }
+    }
+
+    function ShowVideo(theUnitName, forceAip) {
+      var unitName = theUnitName || "kartbros-io_preroll";
+      var forceFallback = !!forceAip;
+
+      console.log("SHOW_VIDEO", unitName, "forceAip:", forceFallback);
+
+      if (/Android|webOS|iPhone|iPad|iPod|Opera Mini/i.test(navigator.userAgent)) {
+        var prerollElement = document.getElementById("preroll");
+        if (prerollElement) {
+          prerollElement.style.display = "none";
+          prerollElement.style.visibility = "hidden";
+        }
+        completeVideoAd(false);
+        return;
+      }
+
+      if (!forceFallback && window.isMsStart && typeof window.$msstart !== "undefined" && typeof window.$msstart.showAdsAsync === "function") {
+        if (!msVideoInstanceId) {
+          console.log("MSStart ad not ready, falling back to AIP");
+          loadMsVideoAsync();
+        } else {
+          window.$msstart.showAdsAsync(msVideoInstanceId).then(function (adInstance) {
+            var completion = adInstance && adInstance.showAdsCompletedAsync;
+            if (completion && typeof completion.then === "function") {
+              completion.then(function () {
+                console.log("MS Video Ad Complete");
+                trackAdEvent("ms_video_shown2");
+                completeVideoAd(false);
+                loadMsVideoAsync();
+              }).catch(function (err) {
+                console.log("MS video not completed", err);
+                trackAdEvent("ms_video_not_completed");
+                loadMsVideoAsync();
+                ShowVideo(unitName, true);
+              });
+            } else {
+              console.log("MS video completion promise missing");
+              trackAdEvent("ms_video_shown2");
+              completeVideoAd(false);
+              loadMsVideoAsync();
+            }
+          }).catch(function (err) {
+            console.log("MS Video Ad Error, showing AIP fallback", err);
+            trackAdEvent("ms_video_show_error2");
+            loadMsVideoAsync();
+            ShowVideo(unitName, true);
+          });
+          return;
+        }
+      }
+
+      if (typeof window.aiptag === "undefined" || !window.aiptag.cmd || !window.aiptag.cmd.player) {
+        console.log("VIDEO_ADBLOCKED");
+        trackAdEvent("video_adblocked");
+        completeVideoAd(true);
+        return;
+      }
+
+      lastUnitPlayed = unitName;
+      trackAdEvent("startvideo-" + unitName);
+
+      window.aiptag.cmd.player.push(function () {
+        var player = window.aiptag.adplayer || window.adplayer;
+        if (player && typeof player.startPreRoll === "function") {
+          player.startPreRoll(unitName);
+        } else {
+          console.log("AIP adplayer missing - marking video complete");
+          trackAdEvent("video_adplayer_missing");
+          completeVideoAd(true);
+        }
+      });
+    }
+
+    function LoadVideo() {
+      loadMsVideoAsync();
+    }
+
+    window.LoadVideo = LoadVideo;
+    window.ShowVideo = ShowVideo;
+
+    loadMsVideoAsync();
+  </script>
+
+
+
+  <noscript>
+    <div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:1.4;z-index:9999;text-align:center;padding:24px">
+      Ative o JavaScript por favor!
+    </div>
+  </noscript>
+  <div class="game-section" style="pointer-events: auto;">
+
+    <div id="custom-loading-screen">
+      <div id="loading-text-custom">
+        GAMES
+        <span class="line-break">WORDLE</span>
+      </div>
+      <div id="loading-progress-container">
+        <div id="loading-progress-bar-fill"></div>
+      </div>
+    </div>
+    <canvas id="unity-canvas" tabindex="-1" onblur="window.focus(); window.scrollTo(0, 0);" width="2251" height="848" style="cursor: default;"></canvas>
+
+    <div id="unity-loading-bar" style="display: none;">
+      <center>
+        <img src="https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/TemplateData/kart_wheel.png" class="spinning-wheel" alt="Spinning kart wheel loading indicator">
+        <br>
+        <img src="https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/TemplateData/loading4.png" alt="Loading game">
+        <br>
+        <img src="https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/TemplateData/fbro.png" alt="Football Bros character icon">
+        <img src="https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/TemplateData/bbbro.png" alt="Basket Bros character icon">
+        <img src="https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/TemplateData/sbro.png" alt="Soccer Bros character icon">
+        <img src="https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/TemplateData/wbro.png" alt="Wrestle Bros character icon">
+        <img src="https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/TemplateData/kbro.png" alt="Kart Bros character icon">
+        <img src="https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/TemplateData/bbro.png" alt="Baseball Bros character icon">
+        <img src="https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/TemplateData/kartbro.png" alt="Kart Bros character icon">
+      </center>
+    </div>
+
+    <div id="unity-warning"></div>
+
+    <div id="adContainerMainMenu" style="display: none;">
+      <div id="kartbros-io_300x250" style="width: 336px; height: 280px; visibility: visible; position: absolute; left: 50%; transform: translateX(calc(-100% - 320px)); overflow: hidden; display: block; pointer-events: auto;">
+      </div>
+      <div id="kartbros-io_300x250_2" style="width: 336px; height: 280px; visibility: visible; position: absolute; left: 50%; transform: translateX(calc(320px + 36px)); overflow: hidden; display: block; pointer-events: auto;">
+      </div>
+    </div>
+    <div id="adContainerTop" style="display: none;">
+      <div id="kartbros-io_728x90"></div>
+    </div>
+
+    <div id="adContainerBottom" style="display: none;">
+      <div id="kartbros-io_970x250"></div>
+    </div>
+
+    <div id="adContainerPillars" style="display: none;">
+      <div id="kartbros-io_160x600"></div>
+      <div id="kartbros-io_160x600_2"></div>
+    </div>
+  </div>
+
+  <div class="info-section">
+    <div class="container">
+      <h1>Kart Bros: Free-to-Play Online Racing</h1>
+      <p>Kart Bros is a simple, fast‑paced kart racing game that's incredibly easy to pick up—yet packed with wild
+        antics! Whether you're hugging the turns, drifting around tracks or hurling powerups with friends, Kart Bros
+        delivers non‑stop thrills in every race.</p>
+      <p>This is a free-to-play .io racing game: No downloads required—just fire up your browser (Chrome recommended)
+        and race!</p>
+      <p>Kart Bros is still in early access and receiving ongoing updates: New features, tracks, and karts are always
+        right around the corner. Provide feedback on the discord to help us develop in the right direction!</p>
+
+      <h2>Controls</h2>
+      <ul>
+        <li><strong>Drive:</strong> Arrow keys or WASD</li>
+        <li><strong>Use Powerups:</strong> Space bar</li>
+        <li><strong>Look Back:</strong> Left Shift</li>
+      </ul>
+
+      <div class="changelog">
+        <h2>Last Changelog Update (09/20/2025) v1.41</h2>
+        <p>🛣️ TRACKS! 3 new tracks: Space, Ancient and Garden</p>
+        <p>🏎️ MORE RACERS!!! More to choose from, unlock them now </p>
+        <p>🚩 FLAGS! Personalize your kart! </p>
+        <p>🏆 NEW CUP! Can you beat Furious Racers in a grand prix? </p>
+        <p>🔓 UNLOCKS!! Better unlock progression for new players</p>
+        <p>🪲 BUG FIXES!!</p>
+      </div>
+
+      <div class="faq">
+        <h2>FAQ</h2>
+        <div class="faq-item">
+          <h3>Why isn't the game loading?</h3>
+          <p>First, check your internet connection and ensure Kart Bros isn't blocked by your network. Also, try
+            disabling any ad blockers.</p>
+        </div>
+        <div class="faq-item">
+          <h3>How do I play?</h3>
+          <p>Use the arrow keys or WASD to drive, and press the space bar to use items. It's straightforward—pick your
+            character, track, start your engines, and have fun!</p>
+        </div>
+        <div class="faq-item">
+          <h3>Which browser should I use?</h3>
+          <p>We recommend Chrome for the best experience. Kart Bros also works on Firefox and Safari, but Chrome is
+            the only browser fully supported. The game is optimized to run well in browser on all computers, from
+            school Chromebooks to the best gaming PC.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Are there more Bros games?</h3>
+          <p>Definitely! Check out <a href="https://footballbros.io" target="_blank">Football Bros</a>, <a href="https://basketbros.io" target="_blank">Basket Bros</a>, <a href="https://soccerbros.gg" target="_blank">Soccer Bros</a>, <a href="https://wrestlebros.io" target="_blank">Wrestle Bros</a>, and
+            <a href="https://baseballbros.io" target="_blank">Baseball Bros</a>. You can find additional free web
+            games at <a href="https://iogames.space" target="_blank">iogames.space</a>!
+          </p>
+        </div>
+        <div class="faq-item">
+          <h3>Do you have a favorite track or racer?</h3>
+          <p>We sure do, but we're not spilling the beans! 😉Try all 9 tracks and let us know your favorite.</p>
+        </div>
+        <div class="faq-item">
+          <h3>When is Kart Bros releasing?</h3>
+          <p>It's live right now Bro! Unlock all the content and get to the finish line first</p>
+        </div>
+        <div class="faq-item">
+          <h3>I want MORE info about the game bro!</h3>
+          <p>We highly recommend you scroll up and jump into a game, but since you asked…</p>
+
+          <h4>Single‑Player Racing</h4>
+          <p><strong>Take the lead:</strong> Start in Quick Play mode to perfect your drifting around tight corners
+            and nail those boost‑filled straights.</p>
+          <p><strong>Fire first:</strong> Earn in‑race rewards to unlock a host of weird and wonderful
+            characters—choose from your vibrant roster of drivers, each with unique stats.</p>
+          <p><strong>Tournament mode:</strong> Game for more driving? Jump into the Bro Cup to face off on three
+            back-to-back maps, racing your way to pole position and claiming the trophy.</p>
+
+          <h4>Multi‑Player Racing</h4>
+          <p><strong>Online Races:</strong> Host or Join your friends in frantic online multiplayer real‑time races
+          </p>
+          <p><strong>Chaotic Power‑Ups:</strong> Grab rockets, speed boosts, shields, and more—timing your items
+            perfectly can turn the tide of any race.</p>
+
+          <p>Get ready to rev your engines, unleash mayhem with power‑ups, and become the ultimate kart racing
+            champion—solo or online—at kartbros.io!</p>
+        </div>
+      </div>
+
+      <div class="social">
+        <p>To keep up to date, sign up for our email newsletter <a href="https://bluewizard.com/subscribe-to-bwd/">right
+            here!</a></p>
+
+        <p>Follow us on social media to stay updated with the latest news and features!</p>
+      </div>
+    </div>
+
+    <div class="social-links">
+      <a href="https://discord.com/invite/bluewizard"><img src="https://zuckvmusk.com/img/discord.png" alt="Discord"></a>
+      <a href="https://www.facebook.com/bluewizarddigital"><img src="https://zuckvmusk.com/img/facebook.png" alt="Facebook"></a>
+      <a href="https://www.tiktok.com/@bluewizarddigital"><img src="https://zuckvmusk.com/img/tiktok.png" alt="TikTok"></a>
+      <a href="https://twitter.com/bluewizardgames"><img src="https://zuckvmusk.com/img/twitter.png" alt="Twitter"></a>
+      <a href="https://www.instagram.com/bluewizardgames/"><img src="https://zuckvmusk.com/img/instagram.png" alt="Instagram"></a>
+      <a href="https://www.youtube.com/bluewizarddigital"><img src="https://zuckvmusk.com/img/youtube.png" alt="Youtube"></a>
+      <a href="/cdn-cgi/l/email-protection#e78e898188a7858b9282908e9d869583c984888a"><img src="https://zuckvmusk.com/img/email.png" alt="Email"></a>
+    </div>
+
+    </div>
+  <div id="videoAdOverlay">
+    <div id="videoad">
+      </div>
+  </div>
+
+  <script>
+    // Toggle pointer events for scrolling
+    document.addEventListener('wheel', onScroll, false);
+    document.addEventListener('mousemove', onMouse, false);
+
+    function onMouse() {
+      const gameSection = document.querySelector('.game-section');
+      if (gameSection) {
+        gameSection.style['pointer-events'] = 'auto';
+      }
+    }
+
+    function onScroll() {
+      const gameSection = document.querySelector('.game-section');
+      if (gameSection) {
+        gameSection.style['pointer-events'] = 'none';
+
+        // Re-enable pointer events after a short delay to allow for smooth scrolling
+        setTimeout(function () {
+          gameSection.style['pointer-events'] = 'auto';
+        }, 500);
+      }
+    }
+
+    // Force exit out off fullscreen mode when the device is rotated to portrait
+    window.addEventListener('orientationchange', () => {
+      if (window.screen.orientation && window.screen.orientation.type.startsWith('portrait')) {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        }
+      }
+    });
+
+    let canvas = document.getElementById("unity-canvas");
+
+    function unityShowBanner(msg, type) {
+      let warningBanner = document.getElementById("unity-warning");
+      function updateBannerVisibility() {
+        warningBanner.style.display = warningBanner.children.length ? "block" : "none";
+      }
+      let div = document.createElement("div");
+      div.innerHTML = msg;
+      warningBanner.appendChild(div);
+
+      if (type === "error") {
+        div.style = "background: red; padding: 10px;";
+      } else if (type === "warning") {
+        div.style = "background: yellow; padding: 10px;";
+        setTimeout(() => {
+          warningBanner.removeChild(div);
+          updateBannerVisibility();
+        }, 5000);
+      }
+      updateBannerVisibility();
+    }
+
+    var buildUrl = "https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/Build";
+    var loaderUrl = buildUrl + "/ad1df1a5d3a5d84ec86114a9aae4cd50.loader.js";
+
+    // --- Parçaları birleştirme işlemi (Unity dosyaları) ---
+    async function mergeParts(baseName, totalParts) {
+      const parts = [];
+      for (let i = 0; i < totalParts; i++) {
+        const partName = `${buildUrl}/${baseName}.part${i.toString().padStart(3, "0")}`;
+        const response = await fetch(partName);
+        if (!response.ok) throw new Error("Parça yüklenemedi: " + partName);
+        const blob = await response.arrayBuffer();
+        parts.push(blob);
+      }
+      const merged = new Blob(parts);
+      return URL.createObjectURL(merged);
+    }
+
+    // --- Önce parçaları birleştir, sonra Unity'yi başlat (Modificado) ---
+    Promise.all([
+      mergeParts("0979ac305f3c4b1dc554d06d357020b3.wasm.unityweb", 5),
+      mergeParts("e1796bad28574a2b96050b6a23d5551b.data.unityweb", 3)
+    ]).then(([wasmUrl, dataUrl]) => {
+      var config = {
+        arguments: [],
+        dataUrl: dataUrl,
+        frameworkUrl: buildUrl + "/bc1d58632e8457498caa7ce10658a015.framework.js.unityweb",
+        codeUrl: wasmUrl,
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "BlueWizard",
+        productName: "KART BROS!",
+        productVersion: "1.41",
+        showBanner: unityShowBanner,
+      };
+
+      // REMOVIDO: document.getElementById("unity-loading-bar").style.display = "block"; (Usaremos o custom)
+
+      let script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          // MODIFICAÇÃO: Atualiza a nova barra de progresso personalizada
+          const fillBar = document.getElementById("loading-progress-bar-fill");
+          if (fillBar) {
+            fillBar.style.width = (100 * progress) + "%";
+          }
+        }).then((unityInstance) => {
+          window.unityInstance = unityInstance;
+
+          // MODIFICAÇÃO: Inicia o fade out e remove a tela de carregamento personalizada
+          const loadingScreen = document.getElementById("custom-loading-screen");
+          if (loadingScreen) {
+            loadingScreen.style.opacity = "0"; 
+            
+            // Remove a tela após a transição (1000ms)
+            setTimeout(() => {
+              loadingScreen.style.display = "none";
+              loadingScreen.remove();
+            }, 1000); 
+          }
+
+        }).catch((message) => {
+          alert(message);
+        });
+      };
+      document.body.appendChild(script);
+    }).catch(err => {
+      alert("Dosyalar birleştirilirken hata oluştu: " + err.message);
+    });
+
+  </script>
+  
+    <style>
+  /* Container: alt ortada, sabit, taşan içerik kırpılır */
+  #ad-container {
+    position: fixed;
+    top: 0; /* Changed from bottom: 0 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(738px, calc(100% - 20px)); /* 738px mas com margem */
+    height: 95px;
+    background: rgba(0,0,0,0.90);
+    display: none;
+    z-index: 99999;
+    border-radius: 0 0 8px 8px; /* Cantos inferiores arredondados */
+    overflow: hidden; /* O conteúdo excedente é cortado */
+    box-shadow: 0 2px 12px rgba(0,0,0,0.45); 
+    box-sizing: border-box;
+  }
+
+  #ad-iframe {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%); 
+    width: 1200px; /* Largura para o efeito de centralização */
+    height: 100%;
+    border: 0;
+    display: block;
+    overflow: hidden;
+    pointer-events: auto;
+    box-sizing: content-box;
+    -ms-overflow-style: none;  /* Esconde scrollbar IE/Edge */
+    scrollbar-width: none;     /* Esconde scrollbar Firefox */
+  }
+  /* Esconde scrollbar Webkit */
+  #ad-iframe::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+  /* Botão de fechar */
+  #close-ad {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: #ff4d4d;
+    color: #fff;
+    border: none;
+    padding: 5px 9px;
+    font-size: 13px;
+    border-radius: 4px;
+    cursor: not-allowed;
+    opacity: 0.72;
+    z-index: 100000;
+  }
+  #close-ad.enabled {
+    cursor: pointer;
+    opacity: 1;
+  }
+
+  /* Máscara opcional para esconder pequenos scrollbars laterais */
+  #ad-right-mask {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 12px;
+    height: 100%;
+    pointer-events: none; 
+    background: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0.9));
+    z-index: 99999;
+  }
+
+  /* Ajustes para mobile */
+  @media (max-width: 440px) {
+    #ad-container { width: calc(100% - 12px); left: 50%; transform: translateX(-50%); border-radius: 6px 6px 0 0; }
+    #ad-iframe { width: 1000px; } 
+  }
+</style>
+
+<div id="ad-container" aria-hidden="false" role="dialog" aria-label="Reklam" style="display: block;">
+
+  <iframe id="ad-iframe" src="https://script.google.com/macros/s/AKfycbyLqfuYNg4HqY0inO1-UyYb5pVvsb0FDxHj6mw418ypqPmoNzUgt0McBC9Q9JfLfFp39Q/exec" width="1200" height="95" scrolling="no" frameborder="0" sandbox="allow-scripts allow-popups allow-same-origin">
+  </iframe>
+
+
+
+  <div id="ad-right-mask"></div>
+</div>
+
+<script>
+  // 2 saniye depois o anúncio aparece, e o X é ativado após 5s
+  (function(){
+    const showDelay = 2000; // ms
+    const countdownStart = 5; // s
+    const adContainer = document.getElementById('ad-container');
+    const closeBtn = document.getElementById('close-ad');
+
+    setTimeout(() => {
+      // Mostra
+      adContainer.style.display = 'none';
+      adContainer.setAttribute('aria-hidden','false');
+
+      // Inicia a contagem
+      let timeLeft = countdownStart;
+      closeBtn.textContent = `Kapat (${timeLeft})`;
+      const t = setInterval(() => {
+        timeLeft--;
+        if (timeLeft > 0) {
+          closeBtn.textContent = `Kapat (${timeLeft})`;
+        } else {
+          clearInterval(t);
+          closeBtn.disabled = false;
+          closeBtn.classList.add('enabled');
+          closeBtn.textContent = 'Kapat (X)';
+        }
+      }, 1000);
+
+      // Ação de fechar
+      closeBtn.addEventListener('click', () => {
+        if (closeBtn.disabled) return;
+        adContainer.remove();
+      });
+
+    }, showDelay);
+  })();
+</script>
+
+
+
+
+
+
+
+
+]]&gt;</content>
+</moduleprefs></module>
+
+          
+          
+        <script src="https://cdn.jsdelivr.net/gh/ranny31ranny/x99xx@main/Build/ad1df1a5d3a5d84ec86114a9aae4cd50.loader.js"></script><script src="blob:https://324748356-atari-embeds.googleusercontent.com/1aef93d0-037e-43e7-8eed-741b80767344"></script><script src="//cdn.jsdelivr.net/npm/eruda"></script></body><div id="eruda" style="all: initial;"></div><div class="__chobitsu-hide__" style="all: initial;"></div></html>
+        <style>
+    /* OVERLAY DEITAT TELA JUNTO COM TELA CHEIA*/
+    .orientation-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #f1f1f1;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        z-index: 10000;
+        transition: opacity 0.5s ease-in-out;
+        opacity: 0;
+    }
+
+    .orientation-overlay.active {
+        display: flex;
+        opacity: 1;
+    }
+
+    .orientation-overlay img {
+        width: 150px;
+        margin-bottom: 20px;
+        animation: rotatePhone 1.5s ease-in-out infinite;
+    }
+
+    .orientation-overlay p {
+        font-family: sans-serif;
+        font-size: 1.5rem;
+        color: #333;
+        padding: 0 20px;
+    }
+    
+    .CliqueAqui {
+      font-size: 2rem;
+      text-decoration: underline;
+      display: block;
+    }
+    
+    .HorizontalText {
+      font-size: 1.7rem;
+    }
+
+    /* Animação para a imagem do celular */
+    @keyframes rotatePhone {
+        0% { transform: rotate(0deg); }
+        25% { transform: rotate(-30deg); }
+        75% { transform: rotate(2deg); }
+        100% { transform: rotate(0deg); }
+    }
+</style>
+
+<div class="orientation-overlay" id="orientationOverlay">
+    <img src="https://i.ibb.co/KjMBTRvW/2141287-200.png" alt="Por favor, vire o celular">
+    <p>Por favor, vire a tela do seu celular para a <strong><span class="HorizontalText">horizontal</span></strong>, ou <span class="CliqueAqui"><strong>Clique aqui</strong></span></p>
+</div>
+
+<script>
+    // Função para entrar em tela cheia e travar a orientação
+    async function enterFullscreenAndLockOrientation() {
+        const docElem = document.documentElement;
+
+        // Verifica se o site já está em tela cheia para evitar a execução desnecessária
+        const isFullscreen = document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
+        
+        if (!isFullscreen) {
+            try {
+                if (docElem.requestFullscreen) {
+                    await docElem.requestFullscreen();
+                } else if (docElem.mozRequestFullScreen) {
+                    await docElem.mozRequestFullScreen();
+                } else if (docElem.webkitRequestFullscreen) {
+                    await docElem.webkitRequestFullscreen();
+                } else if (docElem.msRequestFullscreen) {
+                    await docElem.msRequestFullscreen();
+                }
+                
+                if (screen.orientation && screen.orientation.lock) {
+                    await screen.orientation.lock('landscape').catch(e => console.warn("Não foi possível travar a orientação."));
+                }
+
+            } catch (error) {
+                console.error("Erro ao tentar entrar em tela cheia:", error);
+            }
+        }
+    }
+
+    // Função para mostrar ou esconder o aviso de orientação
+    function handleOrientationOverlay() {
+        const overlay = document.getElementById('orientationOverlay');
+        if (window.innerHeight > window.innerWidth) {
+            overlay.classList.add('active');
+        } else {
+            overlay.classList.remove('active');
+        }
+    }
+
+    // Adiciona o evento de clique no corpo para iniciar a ação de tela cheia
+    document.body.addEventListener('click', enterFullscreenAndLockOrientation);
+
+    // Adiciona o evento de clique no botão "Clique aqui"
+    document.querySelector('.CliqueAqui').addEventListener('click', (e) => {
+        e.stopPropagation();
+        enterFullscreenAndLockOrientation();
+    });
+
+    // Monitora a mudança de orientação e o redimensionamento
+    window.addEventListener('orientationchange', handleOrientationOverlay);
+    window.addEventListener('resize', handleOrientationOverlay);
+
+    // Executa na primeira vez que a página é carregada
+    window.addEventListener('load', handleOrientationOverlay);
+</script>
+<div id="overlay" style="
+  position:fixed;
+  top:0; left:0;
+  width:100vw; height:100vh;
+  background:transparent;
+  z-index:9999;
+"></div>
+
+<script>
+  const overlay = document.getElementById("overlay");
+
+  function enterFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+    else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+  }
+
+  overlay.addEventListener("click", () => {
+    overlay.style.display = "none"; // esconde o overlay depois do clique
+    enterFullscreen();
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) {
+      overlay.style.display = "block"; // volta se sair do fullscreen
+    }
+  });
+</script>

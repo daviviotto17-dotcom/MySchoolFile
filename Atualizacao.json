@@ -4,7 +4,8 @@
   "jogos": [
     {
       "nome": "Jogo Novo",
-      "img": "base64...",
-      "link": "https://..."
+      "img": "data:image/png;base64,COLOQUE_O_BASE64_AQUI",
+      "link": "https://link-de-download.com"
     }
   ]
+}

@@ -1,4 +1,60 @@
-<html><head><link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/paigerodeghero/academicwebsite@897c910c65e6c68b04c44a6b6eba0b99d0f2f2cf/TemplateData/style.css">
+<html><head><script>
+    // 1. BLOQUEAR ZOOM POR GESTOS (Pinch-to-zoom / Pinça com dois dedos no mobile)
+    document.addEventListener('touchstart', function(e) {
+        if (e.touches.length > 1) {
+            e.preventDefault(); // Impede o zoom se houver mais de 1 dedo na tela
+        }
+    }, { passive: false });
+
+    // Bloquear duplo clique rápido no mobile (que às vezes dá zoom automático)
+    let ultimoToque = 0;
+    document.addEventListener('touchend', function(e) {
+        let agora = (new Date()).getTime();
+        if (agora - ultimoToque <= 300) {
+            e.preventDefault();
+        }
+        ultimoToque = agora;
+    }, false);
+
+
+    // 2. BLOQUEAR ZOOM NO PC (Teclado e Roda do Rato)
+    // Bloqueia Ctrl + Roda do Rato (Scroll)
+    document.addEventListener('wheel', function(e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    // Bloqueia as teclas de atalho de Zoom (Ctrl +, Ctrl -, Ctrl 0)
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && (
+            e.key === '+' || 
+            e.key === '-' || 
+            e.key === '=' || 
+            e.key === '0' || 
+            e.keyCode === 107 || // Numpad +
+            e.keyCode === 109 || // Numpad -
+            e.keyCode === 96     // Numpad 0
+        )) {
+            e.preventDefault();
+        }
+    });
+
+
+    // 3. BLOQUEAR ARRASTAR A PÁGINA (Scroll / Efeito Elástico no Mobile)
+    document.addEventListener('touchmove', function(e) {
+        // Se a tela cheia estiver ativa, impede qualquer tentativa de arrastar o fundo
+        e.preventDefault(); 
+    }, { passive: false });
+
+
+    // 4. BLOQUEAR ARRASTAR ELEMENTOS (Impedir o utilizador de clicar e arrastar imagens ou o canvas)
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+    });
+</script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/paigerodeghero/academicwebsite@897c910c65e6c68b04c44a6b6eba0b99d0f2f2cf/TemplateData/style.css">
 <script id="gamedistribution-jssdk" src=""></script><script src="https://cdn.jsdelivr.net/gh/lee2sman/everyday@d45d601d2c4d60adf809a0b677c00b7d12aba7e9/96/TemplateData/UnityProgress.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/gertdoro/SQLite4Unity3d@eda39654f6ca782386c5d8c43677a36873fc1319/Example/Assets/js/sb.js"></script>
     <script>
